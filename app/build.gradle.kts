@@ -255,6 +255,8 @@ dependencies {
     implementation(project(":innertube"))
     implementation(project(":kugou"))
     implementation(project(":lrclib"))
+    implementation(project(":simpmusic"))
+    implementation(project(":betterlyrics"))
     implementation(project(":material-color-utilities"))
     implementation(project(":taglib"))
 
