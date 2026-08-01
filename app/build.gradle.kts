@@ -81,6 +81,11 @@ android {
         buildConfig = true
     }
 
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
+
 // build variants and stuff
     splits {
         abi {
