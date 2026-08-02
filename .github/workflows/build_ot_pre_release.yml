@@ -56,6 +56,16 @@ jobs:
       - name: Build full userdebug APK
         run: ./gradlew assembleFullUserdebug
 
+      - name: Upload userdebug APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: userdebug-apks
+          path: |
+            app/build/outputs/apk/core/userdebug/*.apk
+            app/build/outputs/apk/full/userdebug/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
       - name: Create github userdebug draft
         uses: softprops/action-gh-release@v2
         with:

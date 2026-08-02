@@ -56,6 +56,16 @@ jobs:
       - name: Build full release APK
         run: ./gradlew assembleFullRelease
 
+      - name: Upload release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apks
+          path: |
+            app/build/outputs/apk/core/release/*.apk
+            app/build/outputs/apk/full/release/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
       - name: Create github release draft
         uses: softprops/action-gh-release@v2
         with:
