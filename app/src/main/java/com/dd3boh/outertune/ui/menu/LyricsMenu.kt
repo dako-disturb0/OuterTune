@@ -69,6 +69,7 @@ import com.dd3boh.outertune.ui.screens.settings.fragments.LyricSourceFrag
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LyricsMenuViewModel
 import org.akanework.gramophone.logic.utils.SemanticLyrics
+import org.akanework.gramophone.logic.utils.displayLyricsText
 import org.akanework.gramophone.logic.utils.parseLrc
 
 
@@ -214,6 +215,13 @@ fun LyricsMenu(
             onDismiss = { showSearchResultDialog = false }
         ) {
             itemsIndexed(results) { index, result ->
+                val displayLyrics = remember(result.lyrics) {
+                    displayLyricsText(result.lyrics)
+                }
+                val isSynced = remember(result.lyrics) {
+                    parseLrc(result.lyrics, lyricTrim, multilineLrc) is SemanticLyrics.SyncedLyrics
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -238,7 +246,7 @@ fun LyricsMenu(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = result.lyrics,
+                            text = displayLyrics,
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = if (index == expandedItemIndex) Int.MAX_VALUE else 2,
                             overflow = TextOverflow.Ellipsis,
@@ -254,7 +262,7 @@ fun LyricsMenu(
                                 color = MaterialTheme.colorScheme.secondary,
                                 maxLines = 1
                             )
-                            if (result.lyrics.startsWith("[")) {
+                            if (isSynced) {
                                 Icon(
                                     imageVector = Icons.Rounded.Sync,
                                     contentDescription = null,

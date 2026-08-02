@@ -7,6 +7,7 @@ import androidx.media3.common.util.ParsableByteArray
 import androidx.media3.extractor.text.CuesWithTiming
 import androidx.media3.extractor.text.SubtitleParser
 import androidx.media3.extractor.text.subrip.SubripParser
+import com.dd3boh.betterlyrics.TTMLParser
 import org.akanework.gramophone.logic.forEachSupport
 import org.akanework.gramophone.logic.utils.SemanticLyrics.LyricLine
 import org.akanework.gramophone.logic.utils.SemanticLyrics.SyncedLyrics
@@ -484,7 +485,157 @@ sealed class SemanticLyrics {
     )
 }
 
+fun isTtml(lyrics: String): Boolean {
+    val raw = lyrics.replace("\uFEFF", "").trim()
+    val unwrapped = if (raw.startsWith("```")) {
+        raw.lines().drop(1).let { remaining ->
+            if (remaining.lastOrNull()?.trim() == "```") remaining.dropLast(1) else remaining
+        }.joinToString("\n").trim()
+    } else raw
+
+    val normalized = if (unwrapped.startsWith("&lt;tt", ignoreCase = true) ||
+        unwrapped.contains("&lt;tt", ignoreCase = true) ||
+        (unwrapped.contains("http://www.w3.org/ns/ttml", ignoreCase = true) && unwrapped.contains("&lt;"))
+    ) {
+        unwrapped
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&#39;", "'")
+            .replace("&apos;", "'")
+    } else unwrapped
+
+    val trimmed = normalized.trimStart()
+    return trimmed.startsWith("<") && (
+        trimmed.contains("<tt", ignoreCase = true) ||
+        trimmed.contains("http://www.w3.org/ns/ttml", ignoreCase = true) ||
+        trimmed.contains("http://music.apple.com/lyric-ttml-internal", ignoreCase = true)
+    )
+}
+
+fun normalizeTtmlText(lyrics: String): String {
+    val raw = lyrics.replace("\uFEFF", "").trim()
+    val unwrapped = if (raw.startsWith("```")) {
+        raw.lines().drop(1).let { remaining ->
+            if (remaining.lastOrNull()?.trim() == "```") remaining.dropLast(1) else remaining
+        }.joinToString("\n").trim()
+    } else raw
+
+    return if (unwrapped.startsWith("&lt;tt", ignoreCase = true) ||
+        unwrapped.contains("&lt;tt", ignoreCase = true) ||
+        (unwrapped.contains("http://www.w3.org/ns/ttml", ignoreCase = true) && unwrapped.contains("&lt;"))
+    ) {
+        unwrapped
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&#39;", "'")
+            .replace("&apos;", "'")
+    } else unwrapped
+}
+
+fun parseTtmlToSemanticLyrics(ttmlText: String, trimEnabled: Boolean = false): SemanticLyrics? {
+    val cleanText = normalizeTtmlText(ttmlText)
+    val parsedLines = try {
+        TTMLParser.parseTTML(cleanText)
+    } catch (e: Exception) {
+        emptyList()
+    }
+    if (parsedLines.isEmpty()) return null
+
+    val lines = mutableListOf<LyricLine>()
+    for (line in parsedLines) {
+        var text = line.text
+        if (text.isBlank()) continue
+
+        val startMs = (line.startTime * 1000.0).toLong().coerceAtLeast(0L).toULong()
+        val endMs = (line.endTime * 1000.0).toLong().coerceAtLeast(0L).toULong()
+
+        val speaker = when {
+            line.agent?.contains("v1", ignoreCase = true) == true -> SpeakerEntity.Voice1
+            line.agent?.contains("v2", ignoreCase = true) == true -> SpeakerEntity.Voice2
+            line.agent?.contains("v3", ignoreCase = true) == true -> SpeakerEntity.Group
+            line.isBackground -> SpeakerEntity.Background
+            else -> null
+        }
+
+        val wordsList = if (line.words.isNotEmpty()) {
+            val wList = mutableListOf<Word>()
+            var searchIndex = 0
+            for (w in line.words) {
+                val wordText = w.text
+                if (wordText.isEmpty()) continue
+                val foundIndex = text.indexOf(wordText, searchIndex)
+                if (foundIndex != -1) {
+                    val startChar = foundIndex
+                    val endChar = foundIndex + wordText.length
+                    val wStartMs = (w.startTime * 1000.0).toLong().coerceAtLeast(0L).toULong()
+                    val wEndMs = (w.endTime * 1000.0).toLong().coerceAtLeast(0L).toULong()
+                    wList.add(Word(wStartMs..wEndMs, startChar..<endChar, isRtl = false))
+                    searchIndex = endChar
+                }
+            }
+            wList.takeIf { it.isNotEmpty() }
+        } else null
+
+        if (trimEnabled) {
+            text = text.trim()
+        }
+
+        lines.add(
+            LyricLine(
+                text = text,
+                start = startMs,
+                end = endMs,
+                words = wordsList,
+                speaker = speaker,
+                isTranslated = false
+            )
+        )
+    }
+
+    if (lines.isEmpty()) return null
+
+    for (i in lines.indices) {
+        val line = lines[i]
+        if (line.end <= line.start) {
+            val nextStart = if (i + 1 < lines.size) lines[i + 1].start - 1uL else line.start + 5000uL
+            line.end = nextStart
+        }
+    }
+
+    return SyncedLyrics(lines).also { splitBidirectionalWords(it) }
+}
+
+fun cleanInlineWordTimingText(text: String): String =
+    text.replace(Regex("""<\d{1,3}:\d{2}(?:[.:]\d{2,3})?>"""), "")
+        .replace(Regex("""<\d{1,8}(?:,\d{1,8})?>"""), "")
+        .replace(Regex("""\(\d{1,8},\d{1,8}(?:,\d{1,8})?\)"""), "")
+        .replace(Regex("""\s+"""), " ")
+        .trim()
+
+fun displayLyricsText(lyrics: String): String {
+    if (lyrics.isBlank()) return ""
+    val raw = lyrics.replace("\uFEFF", "").trim()
+    if (isTtml(raw)) {
+        val parsed = parseTtmlToSemanticLyrics(raw)
+        if (parsed != null) {
+            return parsed.unsyncedText.joinToString("\n") { it.first }.trim()
+        }
+    }
+    val parsedLrc = parseLrc(raw, trimEnabled = true, multiLineEnabled = false)
+    if (parsedLrc != null) {
+        return parsedLrc.unsyncedText.joinToString("\n") { cleanInlineWordTimingText(it.first) }.trim()
+    }
+    return cleanInlineWordTimingText(raw)
+}
+
 fun parseLrc(lyricText: String, trimEnabled: Boolean, multiLineEnabled: Boolean): SemanticLyrics? {
+    if (isTtml(lyricText)) {
+        val ttmlParsed = parseTtmlToSemanticLyrics(lyricText, trimEnabled)
+        if (ttmlParsed != null) return ttmlParsed
+    }
+
     val lyricSyntax = SyntacticLrc.parseLrc(lyricText, multiLineEnabled)
         ?: return null
     if (lyricSyntax.find { it is SyntacticLrc.SyncPoint || it is SyntacticLrc.WordSyncPoint } == null) {
