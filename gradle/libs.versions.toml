@@ -1,5 +1,5 @@
 [versions]
-aboutLibraries = "12.2.4"
+aboutLibraries = "15.0.4"
 adaptive = "1.2.0"
 androidGradlePlugin = "8.13.2"
 annotation = "1.9.1"
