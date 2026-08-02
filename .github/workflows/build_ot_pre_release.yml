@@ -71,7 +71,7 @@ jobs:
           if-no-files-found: error
 
       - name: Create github userdebug draft
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: build-${{ env.date_tag }}
           name: "Build ${{ env.date_tag }}"
