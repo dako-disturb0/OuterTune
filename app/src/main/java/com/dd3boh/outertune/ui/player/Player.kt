@@ -146,6 +146,7 @@ import com.dd3boh.outertune.ui.component.rememberBottomSheetState
 import com.dd3boh.outertune.ui.menu.PlayerMenu
 import com.dd3boh.outertune.ui.theme.extractGradientColors
 import com.dd3boh.outertune.ui.utils.SnapLayoutInfoProvider
+import com.dd3boh.outertune.ui.utils.expressiveClickable
 import com.dd3boh.outertune.utils.coilCoroutine
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
@@ -895,7 +896,7 @@ fun ControlsContent(
                         .animateContentSize()
                         .clip(RoundedCornerShape(playPauseRoundness))
                         .background(MaterialTheme.colorScheme.primary)
-                        .clickable {
+                        .expressiveClickable(pressedScale = 0.88f) {
                             if (playerConnection.player.currentMediaItem == null) {
                                 queueBoard.setCurrQueue()
                                 playerConnection.player.togglePlayPause()
@@ -905,7 +906,6 @@ fun ControlsContent(
                             } else {
                                 playerConnection.player.togglePlayPause()
                             }
-                            // play/pause is slightly harder haptic
                             haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                         }
                 ) {

@@ -11,6 +11,9 @@ package com.dd3boh.outertune.ui.theme
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Build
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -220,3 +223,21 @@ val ColorSaver = object : Saver<Color, Int> {
     override fun restore(value: Int): Color = Color(value)
     override fun SaverScope.save(value: Color): Int = value.toArgb()
 }
+
+/**
+ * Material 3 Expressive Motion Physics Specs
+ */
+val ExpressiveSpringSpec: SpringSpec<Float> = spring(
+    dampingRatio = Spring.DampingRatioLowBouncy,
+    stiffness = Spring.StiffnessMediumLow
+)
+
+val ExpressiveBouncySpringSpec: SpringSpec<Float> = spring(
+    dampingRatio = Spring.DampingRatioMediumBouncy,
+    stiffness = Spring.StiffnessLow
+)
+
+val ExpressiveFastSpringSpec: SpringSpec<Float> = spring(
+    dampingRatio = Spring.DampingRatioNoBouncy,
+    stiffness = Spring.StiffnessHigh
+)

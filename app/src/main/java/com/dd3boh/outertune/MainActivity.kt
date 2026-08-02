@@ -20,10 +20,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
@@ -460,9 +464,13 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         if (currentRouteIndex == -1 || currentRouteIndex > previousRouteIndex)
-                                            slideInHorizontally { it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it / 6 } +
+                                                    scaleIn(initialScale = 0.94f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                                    fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                         else
-                                            slideInHorizontally { -it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { -it / 6 } +
+                                                    scaleIn(initialScale = 0.94f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                                    fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                     },
                                     exitTransition = {
                                         val currentRouteIndex = navigationItems.indexOfFirst {
@@ -473,9 +481,13 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         if (targetRouteIndex == -1 || targetRouteIndex > currentRouteIndex)
-                                            slideOutHorizontally { -it / 8 } + fadeOut(tween(100))
+                                            slideOutHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { -it / 6 } +
+                                                    scaleOut(targetScale = 0.96f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                         else
-                                            slideOutHorizontally { it / 8 } + fadeOut(tween(100))
+                                            slideOutHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it / 6 } +
+                                                    scaleOut(targetScale = 0.96f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                     },
                                     popEnterTransition = {
                                         val currentRouteIndex = navigationItems.indexOfFirst {
@@ -486,9 +498,13 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         if (previousRouteIndex != -1 && previousRouteIndex < currentRouteIndex)
-                                            slideInHorizontally { it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it / 6 } +
+                                                    scaleIn(initialScale = 0.94f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                                    fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                         else
-                                            slideInHorizontally { -it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { -it / 6 } +
+                                                    scaleIn(initialScale = 0.94f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                                    fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                     },
                                     popExitTransition = {
                                         val currentRouteIndex = navigationItems.indexOfFirst {
@@ -499,9 +515,13 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         if (currentRouteIndex != -1 && currentRouteIndex < targetRouteIndex)
-                                            slideOutHorizontally { -it / 8 } + fadeOut(tween(100))
+                                            slideOutHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { -it / 6 } +
+                                                    scaleOut(targetScale = 0.96f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                         else
-                                            slideOutHorizontally { it / 8 } + fadeOut(tween(100))
+                                            slideOutHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it / 6 } +
+                                                    scaleOut(targetScale = 0.96f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                                     },
                                     modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
                                 )
