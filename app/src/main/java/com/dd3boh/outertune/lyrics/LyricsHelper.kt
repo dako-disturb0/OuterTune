@@ -45,8 +45,8 @@ class LyricsHelper @Inject constructor(
      * Providers not in the saved order are appended at the end.
      */
     private fun getOrderedProviders(): List<LyricsProvider> {
-        val savedOrder = context.dataStore.get(LyricsProviderOrderKey, null)
-        if (savedOrder.isNullOrBlank()) return allProviders
+        val savedOrder = context.dataStore.get(LyricsProviderOrderKey, "")
+        if (savedOrder.isBlank()) return allProviders
 
         val orderList = savedOrder.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         val providerMap = allProviders.associateBy { it.name }
