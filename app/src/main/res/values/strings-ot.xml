@@ -183,6 +183,24 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="lyrics_synced_clickable">Clickable lyrics</string>
     <string name="lyrics_trim_title">Remove spaces around lyrics</string>
 
+    <!-- Paxsenix / Apple Music lyrics provider -->
+    <string name="enable_paxsenix">Enable Paxsenix (Apple Music) provider</string>
+    <string name="enable_paxsenix_description">Fetches word-by-word TTML lyrics via Apple Music catalog. Requires internet.</string>
+    <string name="lyrics_provider_priority">Provider Priority Order</string>
+    <string name="lyrics_provider_priority_desc">Drag to reorder. Providers higher in the list are tried first.</string>
+    <string name="drag_to_reorder">Drag to reorder</string>
+    <string name="priority">priority</string>
+
+    <!-- Paxsenix API status -->
+    <string name="paxsenix_api_status">Paxsenix API Status</string>
+    <string name="paxsenix_api_status_desc">View real-time Paxsenix server stats and per-provider success rates</string>
+    <string name="overall_success_rate">Overall Success Rate</string>
+    <string name="stat_total">Total</string>
+    <string name="stat_success">Success</string>
+    <string name="stat_failed">Failed</string>
+    <string name="providers_breakdown">Provider Breakdown</string>
+    <string name="refresh">Refresh</string>
+
 <!-- Local player settings -->
     <string name="local_library_enable_title">Enable local media</string>
     <string name="local_library_enable_description">Disabling will hide local library from the app</string>

@@ -262,6 +262,7 @@ dependencies {
     implementation(project(":lrclib"))
     implementation(project(":simpmusic"))
     implementation(project(":betterlyrics"))
+    implementation(project(":paxsenix"))
     implementation(project(":material-color-utilities"))
     implementation(project(":taglib"))
 

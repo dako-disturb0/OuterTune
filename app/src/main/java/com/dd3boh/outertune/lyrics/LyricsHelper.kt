@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.LruCache
 import com.dd3boh.outertune.constants.LyricSourcePrefKey
 import com.dd3boh.outertune.constants.LyricTrimKey
+import com.dd3boh.outertune.constants.LyricsProviderOrderKey
 import com.dd3boh.outertune.constants.MultilineLrcKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.LyricsEntity
@@ -23,9 +24,37 @@ class LyricsHelper @Inject constructor(
     @ApplicationContext private val context: Context,
     val database: MusicDatabase
 ) {
-    private val lyricsProviders =
-        listOf(BetterLyricsProvider, SimpMusicLyricsProvider, YouTubeSubtitleLyricsProvider, LrcLibLyricsProvider, KuGouLyricsProvider, YouTubeLyricsProvider)
+    /**
+     * Default ordered list of all available lyrics providers.
+     * Paxsenix (Apple Music) is first to prioritize word-by-word TTML lyrics.
+     */
+    val allProviders: List<LyricsProvider> = listOf(
+        PaxsenixLyricsProvider,
+        BetterLyricsProvider,
+        SimpMusicLyricsProvider,
+        YouTubeSubtitleLyricsProvider,
+        LrcLibLyricsProvider,
+        KuGouLyricsProvider,
+        YouTubeLyricsProvider,
+    )
+
     private val cache = LruCache<String, List<LyricsResult>>(MAX_CACHE_SIZE)
+
+    /**
+     * Returns the ordered list of providers respecting the user-configured priority.
+     * Providers not in the saved order are appended at the end.
+     */
+    private fun getOrderedProviders(): List<LyricsProvider> {
+        val savedOrder = context.dataStore.get(LyricsProviderOrderKey, null)
+        if (savedOrder.isNullOrBlank()) return allProviders
+
+        val orderList = savedOrder.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        val providerMap = allProviders.associateBy { it.name }
+
+        val ordered = orderList.mapNotNull { providerMap[it] }
+        val remaining = allProviders.filter { it.name !in orderList }
+        return ordered + remaining
+    }
 
     /**
      * Retrieve lyrics from all sources
@@ -111,10 +140,10 @@ class LyricsHelper @Inject constructor(
     }
 
     /**
-     * Lookup lyrics from remote providers
+     * Lookup lyrics from remote providers, respecting the user-configured priority order.
      */
     private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): String? {
-        lyricsProviders.forEach { provider ->
+        getOrderedProviders().forEach { provider ->
             if (provider.isEnabled(context)) {
                 provider.getLyrics(
                     mediaMetadata.id,
@@ -163,7 +192,7 @@ class LyricsHelper @Inject constructor(
             return
         }
         val allResult = mutableListOf<LyricsResult>()
-        lyricsProviders.forEach { provider ->
+        getOrderedProviders().forEach { provider ->
             if (provider.isEnabled(context)) {
                 provider.getAllLyrics(mediaId, songTitle, songArtists, duration) { lyrics ->
                     val result = LyricsResult(provider.name, lyrics)
@@ -177,6 +206,19 @@ class LyricsHelper @Inject constructor(
 
     companion object {
         private const val MAX_CACHE_SIZE = 3
+
+        /**
+         * Default provider order (names must match provider.name values exactly)
+         */
+        val DEFAULT_PROVIDER_ORDER = listOf(
+            "Paxsenix (Apple Music)",
+            "BetterLyrics",
+            "SimpMusic",
+            "YouTube Subtitle",
+            "LrcLib",
+            "Kugou",
+            "YouTube Music",
+        )
     }
 }
 
