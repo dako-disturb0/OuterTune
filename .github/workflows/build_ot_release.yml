@@ -5,6 +5,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,4 +60,4 @@ jobs:
             app/build/outputs/apk/core/release/*.apk
             app/build/outputs/apk/full/release/*.apk
         env:
-          GITHUB_TOKEN: ${{ secrets.REL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REL_TOKEN || secrets.GITHUB_TOKEN }}
