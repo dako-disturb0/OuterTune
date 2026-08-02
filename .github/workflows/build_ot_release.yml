@@ -28,7 +28,7 @@ jobs:
           grep -n 'com.android.tools.build:gradle' media/build.gradle
 
       - name: set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5.6.0
         with:
           java-version: 21
           distribution: "temurin"
