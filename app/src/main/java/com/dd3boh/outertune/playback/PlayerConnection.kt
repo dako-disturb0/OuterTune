@@ -63,13 +63,13 @@ class PlayerConnection(
     val currentSong = mediaMetadata.flatMapLatest {
         database.song(it?.id)
     }
-    val currentLyrics: Flow<SemanticLyrics> = mediaMetadata.flatMapLatest { mediaMetadata ->
+    val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
         if (mediaMetadata != null) {
-            return@flatMapLatest flowOf(service.lyricsHelper.getLyrics(mediaMetadata) ?: uninitializedLyric)
+            flowOf(service.lyricsHelper.getLyrics(mediaMetadata) ?: uninitializedLyric)
         } else {
-            return@flatMapLatest flowOf()
+            flowOf(uninitializedLyric)
         }
-    }
+    }.stateIn(scope, SharingStarted.Lazily, null)
 
     private val currentMediaItemIndex = MutableStateFlow(-1)
 

@@ -1,3 +1,12 @@
+/*
+ * Copyright (C) 2024 z-huang/InnerTune
+ * Copyright (C) 2025 OuterTune Project
+ *
+ * SPDX-License-Identifier: GPL-3.0
+ *
+ * For any other attributions, refer to the git commit history
+ */
+
 package com.dd3boh.outertune.lyrics
 
 import android.content.Context
@@ -14,7 +23,10 @@ import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.akanework.gramophone.logic.utils.LrcUtils
 import org.akanework.gramophone.logic.utils.SemanticLyrics
 import org.akanework.gramophone.logic.utils.parseLrc
@@ -39,6 +51,7 @@ class LyricsHelper @Inject constructor(
     )
 
     private val cache = LruCache<String, List<LyricsResult>>(MAX_CACHE_SIZE)
+    private val singleLyricsCache = LruCache<String, String>(MAX_CACHE_SIZE)
 
     /**
      * Returns the ordered list of providers respecting the user-configured priority.
@@ -57,6 +70,15 @@ class LyricsHelper @Inject constructor(
     }
 
     /**
+     * Consistent cache key based on title+artist
+     */
+    private fun lyricsCacheKey(title: String, artists: String): String =
+        "$artists-$title".replace(" ", "")
+
+    private val MediaMetadata.lyricsCacheKey: String
+        get() = lyricsCacheKey(title, artists.joinToString { it.name })
+
+    /**
      * Retrieve lyrics from all sources
      *
      * How lyrics are resolved are determined by PreferLocalLyrics settings key. If this is true, prioritize local lyric
@@ -66,21 +88,34 @@ class LyricsHelper @Inject constructor(
      * If local lyrics are preferred, lyrics from the lrc file is fetched, and then resolve by other means.
      *
      * @param mediaMetadata Song to fetch lyrics for
-     * @param database MusicDatabase connection. Database lyrics are prioritized over all sources.
-     * If no database is provided, the database source is disabled
+     * @param forceRefresh If true, bypasses cache and database lookup and re-fetches from providers
      */
-    suspend fun getLyrics(mediaMetadata: MediaMetadata): SemanticLyrics? {
+    suspend fun getLyrics(mediaMetadata: MediaMetadata, forceRefresh: Boolean = false): SemanticLyrics? {
         val trim = context.dataStore.get(LyricTrimKey, defaultValue = false)
         val multiline = context.dataStore.get(MultilineLrcKey, defaultValue = true)
-
         val prefLocal = context.dataStore.get(LyricSourcePrefKey, true)
+        val cacheKey = mediaMetadata.lyricsCacheKey
 
-        val cached = cache.get(mediaMetadata.id)?.firstOrNull()
-        if (cached != null) {
-            return parseLrc(cached.lyrics, trim, multiline)
+        if (forceRefresh) {
+            invalidateCache(cacheKey)
+        } else {
+            // Check single lyrics cache first
+            singleLyricsCache.get(cacheKey)?.let { cachedLyrics ->
+                if (cachedLyrics == LYRICS_NOT_FOUND) return null
+                return parseLrc(cachedLyrics, trim, multiline)
+            }
+
+            // Check multi-results cache
+            val cached = cache.get(cacheKey)?.firstOrNull()
+            if (cached != null) {
+                return parseLrc(cached.lyrics, trim, multiline)
+            }
         }
+
+        // Check database
         val dbLyrics = database.lyrics(mediaMetadata.id).let { it.first()?.lyrics }
-        if (dbLyrics != null && !prefLocal) {
+        if (dbLyrics != null && dbLyrics != LYRICS_NOT_FOUND && !prefLocal) {
+            singleLyricsCache.put(cacheKey, dbLyrics)
             return parseLrc(dbLyrics, trim, multiline)
         }
 
@@ -93,13 +128,15 @@ class LyricsHelper @Inject constructor(
             if (localLyrics != null) {
                 return localLyrics
             }
-            if (dbLyrics != null) {
+            if (dbLyrics != null && dbLyrics != LYRICS_NOT_FOUND) {
+                singleLyricsCache.put(cacheKey, dbLyrics)
                 return parseLrc(dbLyrics, trim, multiline)
             }
 
             // "lazy eval" the remote lyrics cuz it is laughably slow
             remoteLyrics = getRemoteLyrics(mediaMetadata)
             if (remoteLyrics != null) {
+                singleLyricsCache.put(cacheKey, remoteLyrics)
                 database.query {
                     upsert(
                         LyricsEntity(
@@ -113,6 +150,7 @@ class LyricsHelper @Inject constructor(
         } else {
             remoteLyrics = getRemoteLyrics(mediaMetadata)
             if (remoteLyrics != null) {
+                singleLyricsCache.put(cacheKey, remoteLyrics)
                 database.query {
                     upsert(
                         LyricsEntity(
@@ -125,9 +163,10 @@ class LyricsHelper @Inject constructor(
             } else if (localLyrics != null) {
                 return localLyrics
             }
-
         }
 
+        // Mark as not found in cache and database
+        singleLyricsCache.put(cacheKey, LYRICS_NOT_FOUND)
         database.query {
             upsert(
                 LyricsEntity(
@@ -145,15 +184,23 @@ class LyricsHelper @Inject constructor(
     private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): String? {
         getOrderedProviders().forEach { provider ->
             if (provider.isEnabled(context)) {
-                provider.getLyrics(
-                    mediaMetadata.id,
-                    mediaMetadata.title,
-                    mediaMetadata.artists.joinToString { it.name },
-                    mediaMetadata.duration
-                ).onSuccess { lyrics ->
-                    return lyrics
-                }.onFailure {
-                    reportException(it)
+                try {
+                    provider.getLyrics(
+                        mediaMetadata.id,
+                        mediaMetadata.title,
+                        mediaMetadata.artists.joinToString { it.name },
+                        mediaMetadata.duration
+                    ).onSuccess { lyrics ->
+                        if (lyrics.isNotBlank() && lyrics != LYRICS_NOT_FOUND) {
+                            return lyrics
+                        }
+                    }.onFailure {
+                        reportException(it)
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    reportException(e)
                 }
             }
         }
@@ -184,7 +231,7 @@ class LyricsHelper @Inject constructor(
         duration: Int,
         callback: (LyricsResult) -> Unit,
     ) {
-        val cacheKey = "$songArtists-$songTitle".replace(" ", "")
+        val cacheKey = lyricsCacheKey(songTitle, songArtists)
         cache.get(cacheKey)?.let { results ->
             results.forEach {
                 callback(it)
@@ -192,20 +239,40 @@ class LyricsHelper @Inject constructor(
             return
         }
         val allResult = mutableListOf<LyricsResult>()
-        getOrderedProviders().forEach { provider ->
-            if (provider.isEnabled(context)) {
-                provider.getAllLyrics(mediaId, songTitle, songArtists, duration) { lyrics ->
-                    val result = LyricsResult(provider.name, lyrics)
-                    allResult += result
-                    callback(result)
+        withContext(Dispatchers.IO) {
+            getOrderedProviders().forEach { provider ->
+                if (provider.isEnabled(context)) {
+                    try {
+                        provider.getAllLyrics(mediaId, songTitle, songArtists, duration) { lyrics ->
+                            if (lyrics.isNotBlank() && lyrics != LYRICS_NOT_FOUND) {
+                                val result = LyricsResult(provider.name, lyrics)
+                                allResult += result
+                                callback(result)
+                            }
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        reportException(e)
+                    }
                 }
             }
         }
         cache.put(cacheKey, allResult)
     }
 
+    fun clearCache() {
+        cache.evictAll()
+        singleLyricsCache.evictAll()
+    }
+
+    private fun invalidateCache(cacheKey: String) {
+        cache.remove(cacheKey)
+        singleLyricsCache.remove(cacheKey)
+    }
+
     companion object {
-        private const val MAX_CACHE_SIZE = 3
+        private const val MAX_CACHE_SIZE = 16
 
         /**
          * Default provider order (names must match provider.name values exactly)

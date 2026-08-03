@@ -8,6 +8,7 @@ import com.dd3boh.outertune.lyrics.LyricsHelper
 import com.dd3boh.outertune.lyrics.LyricsResult
 import com.dd3boh.outertune.models.MediaMetadata
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -40,7 +41,10 @@ class LyricsMenuViewModel @Inject constructor(
                         }
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
+                // Silently ignore fetch errors
             } finally {
                 isLoading.value = false
             }
@@ -54,10 +58,18 @@ class LyricsMenuViewModel @Inject constructor(
 
     fun refetchLyrics(mediaMetadata: MediaMetadata, onDone: (SemanticLyrics?) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
-            database.deleteLyricById(mediaMetadata.id)
-            withTimeoutOrNull(LYRIC_FETCH_TIMEOUT) {
-                val lyrics = lyricsHelper.getLyrics(mediaMetadata)
-                onDone(lyrics)
+            try {
+                // Delete from DB so it gets re-fetched from providers
+                database.deleteLyricById(mediaMetadata.id)
+                withTimeoutOrNull(LYRIC_FETCH_TIMEOUT) {
+                    // forceRefresh=true bypasses all caches
+                    val lyrics = lyricsHelper.getLyrics(mediaMetadata, forceRefresh = true)
+                    onDone(lyrics)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                onDone(null)
             }
         }
     }

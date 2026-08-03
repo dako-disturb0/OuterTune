@@ -133,8 +133,11 @@ fun Lyrics(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     // NOTE: lyricsModel is the current display lyrics that is updated by playerLyrics AND/OR manually
-    val playerLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
-    var lyricsModel by remember { mutableStateOf(playerLyrics) }
+    // null       = still loading (show shimmer)
+    // uninitializedLyric = fetch done, but lyrics not found (show "not found" message)
+    // anything else = valid lyrics to display
+    val playerLyrics by playerConnection.currentLyrics.collectAsState()
+    var lyricsModel by remember { mutableStateOf<SemanticLyrics?>(null) }
 
     val lines: SnapshotStateList<LyricLine> = remember { mutableStateListOf<LyricLine>() }
 
@@ -142,9 +145,12 @@ fun Lyrics(
         lyricsModel is SemanticLyrics.SyncedLyrics
     }
 
+    // Sync lyricsModel with playerLyrics (from StateFlow)
+    // null = still fetching (show shimmer), uninitializedLyric = not found
     LaunchedEffect(playerLyrics) {
         lyricsModel = playerLyrics
     }
+
 
     LaunchedEffect(lyricsModel) {
         lines.clear()
