@@ -25,6 +25,7 @@ import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.akanework.gramophone.logic.utils.LrcUtils
@@ -179,61 +180,59 @@ class LyricsHelper @Inject constructor(
     }
 
     /**
-     * Lookup lyrics from remote providers, respecting the user-configured priority order.
+     * Lookup lyrics from remote providers concurrently in user priority order.
      */
-    private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): String? {
+    private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): String? = withContext(Dispatchers.IO) {
         val cleanTitle = LyricsSanitizer.cleanTitle(mediaMetadata.title)
         val cleanArtist = LyricsSanitizer.cleanArtist(mediaMetadata.artists.joinToString { it.name })
+        val enabledProviders = getOrderedProviders().filter { it.isEnabled(context) }
+        if (enabledProviders.isEmpty()) return@withContext null
 
-        // Primary pass with cleaned title & artist
-        getOrderedProviders().forEach { provider ->
-            if (provider.isEnabled(context)) {
-                try {
+        suspend fun fetchFromProvider(provider: LyricsProvider, title: String): String? {
+            return try {
+                kotlinx.coroutines.withTimeoutOrNull(3500L) {
                     provider.getLyrics(
                         mediaMetadata.id,
-                        cleanTitle,
+                        title,
                         cleanArtist,
                         mediaMetadata.duration
-                    ).onSuccess { lyrics ->
-                        if (lyrics.isNotBlank() && lyrics != LYRICS_NOT_FOUND) {
-                            return lyrics
-                        }
-                    }.onFailure {
-                        reportException(it)
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    reportException(e)
+                    ).getOrNull()?.takeIf { it.isNotBlank() && it != LYRICS_NOT_FOUND }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        // Primary pass with cleaned title in parallel
+        val cleanJobs = enabledProviders.map { provider ->
+            provider to async { fetchFromProvider(provider, cleanTitle) }
+        }
+
+        for ((_, job) in cleanJobs) {
+            val result = job.await()
+            if (result != null) {
+                cleanJobs.forEach { it.second.cancel() }
+                return@withContext result
             }
         }
 
         // Secondary fallback pass with raw title if cleanTitle differs
         if (cleanTitle != mediaMetadata.title) {
-            getOrderedProviders().forEach { provider ->
-                if (provider.isEnabled(context)) {
-                    try {
-                        provider.getLyrics(
-                            mediaMetadata.id,
-                            mediaMetadata.title,
-                            cleanArtist,
-                            mediaMetadata.duration
-                        ).onSuccess { lyrics ->
-                            if (lyrics.isNotBlank() && lyrics != LYRICS_NOT_FOUND) {
-                                return lyrics
-                            }
-                        }
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        // ignore
-                    }
+            val rawJobs = enabledProviders.map { provider ->
+                provider to async { fetchFromProvider(provider, mediaMetadata.title) }
+            }
+            for ((_, job) in rawJobs) {
+                val result = job.await()
+                if (result != null) {
+                    rawJobs.forEach { it.second.cancel() }
+                    return@withContext result
                 }
             }
         }
 
-        return null
+        null
     }
 
     /**

@@ -100,6 +100,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -542,28 +543,30 @@ fun AudioQualityBadge(
     onBackgroundColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    val label = when {
-        sampleRate != null && sampleRate > 0 -> {
-            val khz = sampleRate / 1000f
-            if (khz == khz.toLong().toFloat()) "${khz.toInt()} kHz" else "${"%.1f".format(khz)} kHz"
-        }
-        bitrate != null && bitrate > 0 -> "${bitrate / 1000} kbps"
-        else -> return
-    }
+    val kbpsStr = if (bitrate != null && bitrate > 0) "${bitrate / 1000} Kbps" else null
+    val khzStr = if (sampleRate != null && sampleRate > 0) {
+        val khz = sampleRate / 1000f
+        if (khz == khz.toLong().toFloat()) "${khz.toInt()} kHz" else "${"%.1f".format(khz)} kHz"
+    } else null
+
+    val label = listOfNotNull(kbpsStr, khzStr).joinToString(" • ")
+    if (label.isBlank()) return
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(onBackgroundColor.copy(alpha = 0.10f))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(onBackgroundColor.copy(alpha = 0.12f))
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
             fontFamily = FontFamily.Monospace,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = onBackgroundColor.copy(alpha = 0.75f),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = onBackgroundColor.copy(alpha = 0.85f),
             maxLines = 1,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -748,7 +751,10 @@ fun ControlsContent(
                     .fillMaxWidth()
                     .padding(horizontal = PlayerHorizontalPadding)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
                     // Song title
                     Text(
                         text = mediaMetadata?.title ?: "",
@@ -757,6 +763,7 @@ fun ControlsContent(
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier
                             .basicMarquee(iterations = 1, initialDelayMillis = 3000)
                             .clickable(enabled = mediaMetadata?.album != null) {
@@ -767,45 +774,44 @@ fun ControlsContent(
 
                     Spacer(Modifier.height(2.dp))
 
-                    // Artist row + audio badge
+                    // Artist row
                     Row(
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Artists
-                        Row(modifier = Modifier.weight(1f, fill = false)) {
-                            mediaMetadata?.artists?.fastForEachIndexed { index, artist ->
+                        mediaMetadata?.artists?.fastForEachIndexed { index, artist ->
+                            Text(
+                                text = artist.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = onBackgroundColor.copy(alpha = 0.75f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .basicMarquee(iterations = 1, initialDelayMillis = 5000)
+                                    .clickable(enabled = artist.id != null) {
+                                        navController.navigate("artist/${artist.id}")
+                                        playerSheetState.collapseSoft()
+                                    }
+                            )
+                            if (index != mediaMetadata?.artists?.lastIndex) {
                                 Text(
-                                    text = artist.name,
+                                    text = ", ",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = onBackgroundColor.copy(alpha = 0.75f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .basicMarquee(iterations = 1, initialDelayMillis = 5000)
-                                        .clickable(enabled = artist.id != null) {
-                                            navController.navigate("artist/${artist.id}")
-                                            playerSheetState.collapseSoft()
-                                        }
+                                    color = onBackgroundColor.copy(alpha = 0.75f)
                                 )
-                                if (index != mediaMetadata?.artists?.lastIndex) {
-                                    Text(
-                                        text = ", ",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = onBackgroundColor.copy(alpha = 0.75f)
-                                    )
-                                }
                             }
                         }
-
-                        // Audio quality badge (kHz or kbps)
-                        AudioQualityBadge(
-                            sampleRate = currentFormat?.sampleRate,
-                            bitrate = currentFormat?.bitrate,
-                            onBackgroundColor = onBackgroundColor,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
                     }
+
+                    // Centered Audio quality badge (Kbps • kHz)
+                    Spacer(Modifier.height(6.dp))
+                    AudioQualityBadge(
+                        sampleRate = currentFormat?.sampleRate,
+                        bitrate = currentFormat?.bitrate,
+                        onBackgroundColor = onBackgroundColor,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
 
                 // Action buttons for portrait (inline with title)

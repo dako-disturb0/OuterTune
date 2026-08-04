@@ -31,9 +31,14 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.MicExternalOn
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -257,12 +262,48 @@ fun Lyrics(
         }
     }
 
+    val isKaraoke = remember(lyricsModel, lines) {
+        lyricsModel != null && lyricsModel != uninitializedLyric && lines.fastAny { it.words != null && it.words.isNotEmpty() }
+    }
+
     BoxWithConstraints(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxSize()
             .padding(bottom = 12.dp)
     ) {
+        if (lyricsModel != null && lyricsModel != uninitializedLyric) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (isKaraoke) androidx.compose.material.icons.Icons.Rounded.MicExternalOn else androidx.compose.material.icons.Icons.Rounded.Subtitles,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = if (isKaraoke) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isKaraoke)
+                            "Karaoke (Perkata, Kayak Hasil iTunes Atau Apple Music)"
+                        else
+                            "Normal",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isKaraoke) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+        }
+
         LazyColumn(
             state = lazyListState,
             contentPadding = WindowInsets.systemBars
