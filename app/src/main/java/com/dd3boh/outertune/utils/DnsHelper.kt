@@ -66,7 +66,7 @@ object DnsHelper {
             DnsMode.GOOGLE -> "https://dns.google/dns-query"
             DnsMode.OPENDNS -> "https://doh.opendns.com/dns-query"
             DnsMode.CUSTOM -> customUrl.trim().ifBlank { "https://cloudflare-dns.com/dns-query" }
-            else -> return Dns.SYSTEM
+            DnsMode.OFF -> return Dns.SYSTEM
         }
 
         val dohUrl = dohUrlString.toHttpUrlOrNull() ?: return Dns.SYSTEM
@@ -90,7 +90,7 @@ object DnsHelper {
                 InetAddress.getByName("208.67.222.222"),
                 InetAddress.getByName("208.67.220.220")
             )
-            else -> emptyList()
+            DnsMode.CUSTOM, DnsMode.OFF -> emptyList()
         }
 
         return try {
