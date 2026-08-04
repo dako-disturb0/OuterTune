@@ -20,11 +20,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.dd3boh.outertune.constants.PlayerTimelineType
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +38,9 @@ fun PlayerSliderTrack(
     sliderState: SliderState,
     modifier: Modifier = Modifier,
     colors: SliderColors = SliderDefaults.colors(),
-    trackHeight: Dp = 10.dp
+    timelineType: PlayerTimelineType = PlayerTimelineType.PIN_BAR,
+    trackHeight: Dp = 10.dp,
+    isDragging: Boolean = false
 ) {
     val inactiveTrackColor = colors.inactiveTrackColor
     val activeTrackColor = colors.activeTrackColor
@@ -40,11 +48,12 @@ fun PlayerSliderTrack(
     val activeTickColor = colors.activeTickColor
 
     val valueRange = sliderState.valueRange
+    val canvasHeight = maxOf(trackHeight * 1.8f, 24.dp)
 
     Canvas(
         modifier
             .fillMaxWidth()
-            .height(trackHeight)
+            .height(canvasHeight)
     ) {
         drawTrack(
             stepsToTickFractions(sliderState.steps),
@@ -58,7 +67,9 @@ fun PlayerSliderTrack(
             activeTrackColor,
             inactiveTickColor,
             activeTickColor,
-            trackHeight
+            timelineType,
+            trackHeight,
+            isDragging
         )
     }
 }
@@ -71,7 +82,9 @@ private fun DrawScope.drawTrack(
     activeTrackColor: Color,
     inactiveTickColor: Color,
     activeTickColor: Color,
-    trackHeight: Dp = 2.dp
+    timelineType: PlayerTimelineType,
+    trackHeight: Dp,
+    isDragging: Boolean
 ) {
     val isRtl = layoutDirection == LayoutDirection.Rtl
     val sliderLeft = Offset(0f, center.y)
@@ -80,32 +93,138 @@ private fun DrawScope.drawTrack(
     val sliderEnd = if (isRtl) sliderLeft else sliderRight
     val tickSize = 2.0.dp.toPx()
     val trackStrokeWidth = trackHeight.toPx()
-    drawLine(
-        inactiveTrackColor,
-        sliderStart,
-        sliderEnd,
-        trackStrokeWidth,
-        StrokeCap.Round
-    )
-    val sliderValueEnd = Offset(
-        sliderStart.x +
-                (sliderEnd.x - sliderStart.x) * activeRangeEnd,
-        center.y
-    )
 
     val sliderValueStart = Offset(
-        sliderStart.x +
-                (sliderEnd.x - sliderStart.x) * activeRangeStart,
+        sliderStart.x + (sliderEnd.x - sliderStart.x) * activeRangeStart,
         center.y
     )
 
-    drawLine(
-        activeTrackColor,
-        sliderValueStart,
-        sliderValueEnd,
-        trackStrokeWidth,
-        StrokeCap.Round
+    val sliderValueEnd = Offset(
+        sliderStart.x + (sliderEnd.x - sliderStart.x) * activeRangeEnd,
+        center.y
     )
+
+    when (timelineType) {
+        PlayerTimelineType.PIN_BAR -> {
+            drawLine(
+                color = inactiveTrackColor,
+                start = sliderValueEnd,
+                end = sliderEnd,
+                strokeWidth = trackStrokeWidth,
+                cap = StrokeCap.Round
+            )
+            drawLine(
+                color = activeTrackColor,
+                start = sliderValueStart,
+                end = sliderValueEnd,
+                strokeWidth = trackStrokeWidth,
+                cap = StrokeCap.Round
+            )
+            val pinRadius = maxOf(trackStrokeWidth * 1.2f, 8.dp.toPx())
+            drawCircle(
+                color = activeTrackColor,
+                center = sliderValueEnd,
+                radius = pinRadius
+            )
+            drawCircle(
+                color = inactiveTrackColor,
+                center = sliderValueEnd,
+                radius = pinRadius * 0.4f
+            )
+        }
+
+        PlayerTimelineType.WAVY -> {
+            drawLine(
+                color = inactiveTrackColor,
+                start = sliderValueEnd,
+                end = sliderEnd,
+                strokeWidth = trackStrokeWidth,
+                cap = StrokeCap.Round
+            )
+
+            val activeDist = abs(sliderValueEnd.x - sliderValueStart.x)
+            if (activeDist > 0f) {
+                val wavePath = Path()
+                val wavelength = 20.dp.toPx()
+                val amplitude = if (isDragging) trackStrokeWidth * 0.8f else trackStrokeWidth * 0.6f
+                val stepPx = 2.dp.toPx()
+                val direction = if (sliderValueEnd.x >= sliderValueStart.x) 1f else -1f
+
+                wavePath.moveTo(sliderValueStart.x, center.y)
+                var currentDist = 0f
+                while (currentDist < activeDist) {
+                    currentDist = minOf(currentDist + stepPx, activeDist)
+                    val x = sliderValueStart.x + currentDist * direction
+                    val y = center.y + amplitude * sin(currentDist * (2 * PI / wavelength)).toFloat()
+                    wavePath.lineTo(x, y)
+                }
+
+                drawPath(
+                    path = wavePath,
+                    color = activeTrackColor,
+                    style = Stroke(width = trackStrokeWidth, cap = StrokeCap.Round)
+                )
+
+                drawCircle(
+                    color = activeTrackColor,
+                    center = sliderValueEnd,
+                    radius = maxOf(trackStrokeWidth * 0.8f, 5.dp.toPx())
+                )
+            }
+        }
+
+        PlayerTimelineType.FAT_BAR -> {
+            val fatStrokeWidth = if (isDragging) trackStrokeWidth * 2.2f else trackStrokeWidth * 1.8f
+
+            drawLine(
+                color = inactiveTrackColor,
+                start = sliderStart,
+                end = sliderEnd,
+                strokeWidth = fatStrokeWidth,
+                cap = StrokeCap.Round
+            )
+            if (activeRangeEnd > 0f) {
+                drawLine(
+                    color = activeTrackColor,
+                    start = sliderValueStart,
+                    end = sliderValueEnd,
+                    strokeWidth = fatStrokeWidth,
+                    cap = StrokeCap.Round
+                )
+            }
+        }
+
+        PlayerTimelineType.DYNAMIC_BAR -> {
+            val activeStrokeWidth = if (isDragging) trackStrokeWidth * 2.0f else trackStrokeWidth * 1.3f
+            val inactiveStrokeWidth = if (isDragging) trackStrokeWidth * 1.2f else trackStrokeWidth * 0.7f
+
+            drawLine(
+                color = inactiveTrackColor,
+                start = sliderStart,
+                end = sliderEnd,
+                strokeWidth = inactiveStrokeWidth,
+                cap = StrokeCap.Round
+            )
+
+            if (activeRangeEnd > 0f) {
+                drawLine(
+                    color = activeTrackColor,
+                    start = sliderValueStart,
+                    end = sliderValueEnd,
+                    strokeWidth = activeStrokeWidth,
+                    cap = StrokeCap.Round
+                )
+            }
+
+            if (isDragging) {
+                drawCircle(
+                    color = activeTrackColor,
+                    center = sliderValueEnd,
+                    radius = activeStrokeWidth * 0.7f
+                )
+            }
+        }
+    }
 
     for (tick in tickFractions) {
         val outsideFraction = tick > activeRangeEnd || tick < activeRangeStart

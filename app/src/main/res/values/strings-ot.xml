@@ -123,9 +123,6 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="new_interface">New interface layout</string>
     <string name="high_contrast" translatable="false">High contrast mode compatibility</string>
     <string name="high_contrast_description" translatable="false">Enable to fix some visual issues when Android\'s high contrast mode is enabled</string>
-    <string name="player_background_blur">Blur</string>
-    <string name="player_background_default">Follow theme</string>
-    <string name="player_background_gradient">Gradient</string>
     <string name="player_background_style">Player background style</string>
     <string name="show_liked_and_downloaded_playlist">Show playlists for liked and downloaded songs in library</string>
     <string name="slim_navbar_title">Slim navbar</string>
@@ -136,6 +133,33 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="tablet_ui_title">Force tablet UI</string>
     <string name="tablet_ui_title_description">Force a split interface optimized for large screens. This setting has no effect if minimum width requirements are not met</string>
     <string name="filter_arrangement">Arrange filters</string>
+
+<!-- Player Customization & Live Preview -->
+    <string name="live_visual_preview">Visualisasi Contoh Ukurannya</string>
+    <string name="thumbnail_size">Thumbnail Size</string>
+    <string name="thumbnail_roundness">Thumbnail Roundness</string>
+    <string name="crop_video_thumbnail">Crop Video Thumbnail</string>
+    <string name="player_timeline_size">Player Timeline Size</string>
+    <string name="player_timeline_type">Timeline Type</string>
+
+    <string name="timeline_type_pin_bar">Pin Bar</string>
+    <string name="timeline_type_wavy">Wavy timeline</string>
+    <string name="timeline_type_fat_bar">Fat Bar</string>
+    <string name="timeline_type_dynamic_bar">Dynamic Bar</string>
+
+    <string name="crop_thumbnail_original">Original</string>
+    <string name="crop_thumbnail_round">Round</string>
+
+    <string name="player_background_follow_artwork">Follow Song Cover Art</string>
+    <string name="player_background_follow_theme">Follow App Theme</string>
+    <string name="player_background_gradient">Gradient from Song Art</string>
+    <string name="player_background_blur">Blurred Song Art</string>
+    <string name="player_background_color_palette">Color Palette</string>
+    <string name="player_background_animated_gradient">Animated Gradient</string>
+    <string name="player_background_original">Original</string>
+
+    <string name="color_palette_picker_title">Custom Color Palette</string>
+    <string name="color_palette_hex_input">HEX Color Code</string>
 
 <!-- Content settings -->
     <string name="like_autodownload">Automatically download your liked songs</string>

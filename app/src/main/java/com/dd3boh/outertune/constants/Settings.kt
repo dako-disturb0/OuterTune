@@ -13,7 +13,15 @@ enum class DarkMode {
 }
 
 enum class PlayerBackgroundStyle {
-    FOLLOW_THEME, GRADIENT, BLUR
+    FOLLOW_ARTWORK, FOLLOW_THEME, GRADIENT, BLUR, COLOR_PALETTE, ANIMATED_GRADIENT, DEFAULT
+}
+
+enum class PlayerTimelineType {
+    PIN_BAR, WAVY, FAT_BAR, DYNAMIC_BAR
+}
+
+enum class PlayerThumbnailCrop {
+    ORIGINAL, ROUND
 }
 
 enum class LibraryViewType {

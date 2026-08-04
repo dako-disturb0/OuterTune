@@ -125,6 +125,9 @@ import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.PlayerBackgroundStyle
 import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
+import com.dd3boh.outertune.constants.PlayerTimelineSizeKey
+import com.dd3boh.outertune.constants.PlayerTimelineType
+import com.dd3boh.outertune.constants.PlayerTimelineTypeKey
 import com.dd3boh.outertune.constants.QueuePeekHeight
 import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
@@ -665,6 +668,14 @@ fun ControlsContent(
         key = SeekIncrementKey,
         defaultValue = SeekIncrement.OFF
     )
+    val timelineType by rememberEnumPreference(
+        key = PlayerTimelineTypeKey,
+        defaultValue = PlayerTimelineType.PIN_BAR
+    )
+    val timelineSize by rememberPreference(
+        key = PlayerTimelineSizeKey,
+        defaultValue = 8
+    )
     val showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
     val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
@@ -824,7 +835,8 @@ fun ControlsContent(
                     PlayerSliderTrack(
                         sliderState = sliderState,
                         colors = SliderDefaults.colors(),
-                        trackHeight = 8.dp,
+                        timelineType = timelineType,
+                        trackHeight = timelineSize.dp,
                     )
                 },
                 modifier = Modifier.padding(horizontal = PlayerHorizontalPadding)
@@ -1018,86 +1030,6 @@ fun ControlsContent(
                     }
                 }
             }
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Player Background
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-fun PlayerBackground(
-    playerConnection: PlayerConnection,
-    playerBackground: PlayerBackgroundStyle,
-    showLyrics: Boolean,
-    useDarkTheme: Boolean,
-) {
-    val TAG = "PlayerBackground"
-    Log.v(TAG, "PLR_BG-1")
-
-    val context = LocalContext.current
-
-    Box(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation))
-            .fillMaxSize()
-    ) {
-
-        val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
-        var gradientColors by remember { mutableStateOf<List<Color>>(emptyList()) }
-
-        LaunchedEffect(mediaMetadata, playerBackground) {
-            if (playerBackground != PlayerBackgroundStyle.GRADIENT || context.isPowerSaver()) return@LaunchedEffect
-
-            withContext(coilCoroutine) {
-                val result = context.imageLoader.execute(
-                    ImageRequest.Builder(context)
-                        .data(mediaMetadata?.getThumbnailModel(100, 100))
-                        .allowHardware(false)
-                        .build()
-                )
-                val bitmap = result.image?.toBitmap()?.extractGradientColors()
-                bitmap?.let { gradientColors = it }
-            }
-        }
-
-        AnimatedContent(
-            targetState = mediaMetadata,
-            transitionSpec = { fadeIn(tween(1000)).togetherWith(fadeOut(tween(1000))) }
-        ) { metadata ->
-            if (playerBackground == PlayerBackgroundStyle.BLUR) {
-                AsyncImage(
-                    model = metadata?.getThumbnailModel(100, 100),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(100.dp)
-                        .alpha(0.5f)
-                )
-            }
-        }
-
-        AnimatedContent(
-            targetState = gradientColors,
-            transitionSpec = { fadeIn(tween(1000)).togetherWith(fadeOut(tween(1000))) }
-        ) { colors ->
-            if (playerBackground == PlayerBackgroundStyle.GRADIENT && colors.size >= 2) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Brush.verticalGradient(colors), alpha = 0.4f)
-                )
-            }
-        }
-
-        if (playerBackground != PlayerBackgroundStyle.FOLLOW_THEME && showLyrics) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(if (useDarkTheme) Color.Black.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.5f))
-            )
         }
     }
 }

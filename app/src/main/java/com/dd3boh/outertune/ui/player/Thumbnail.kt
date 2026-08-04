@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -37,14 +38,19 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
+import com.dd3boh.outertune.constants.PlayerThumbnailCrop
+import com.dd3boh.outertune.constants.PlayerThumbnailCropKey
+import com.dd3boh.outertune.constants.PlayerThumbnailRoundnessKey
+import com.dd3boh.outertune.constants.PlayerThumbnailSizeKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
-import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.Lyrics
 import com.dd3boh.outertune.ui.utils.highRes
+import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -53,12 +59,23 @@ fun Thumbnail(
     sliderPositionProvider: () -> Long?,
     modifier: Modifier = Modifier,
     showLyricsOnClick: Boolean = false,
-    customMediaMetadata: MediaMetadata? = null
+    customMediaMetadata: MediaMetadata? = null,
+    size: Float? = null,
+    roundness: Int? = null,
+    crop: PlayerThumbnailCrop? = null,
 ) {
     val context = LocalContext.current
     val currentView = LocalView.current
     val haptic = LocalHapticFeedback.current
     val playerConnection = LocalPlayerConnection.current ?: return
+
+    val prefSize by rememberPreference(PlayerThumbnailSizeKey, defaultValue = 1.0f)
+    val prefRoundness by rememberPreference(PlayerThumbnailRoundnessKey, defaultValue = 24)
+    val prefCrop by rememberEnumPreference(PlayerThumbnailCropKey, defaultValue = PlayerThumbnailCrop.ORIGINAL)
+
+    val thumbnailSize = size ?: prefSize
+    val thumbnailRoundness = roundness ?: prefRoundness
+    val thumbnailCrop = crop ?: prefCrop
 
     var showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
@@ -71,6 +88,12 @@ fun Thumbnail(
         onDispose {
             currentView.keepScreenOn = false
         }
+    }
+
+    val shape = if (thumbnailCrop == PlayerThumbnailCrop.ROUND) {
+        CircleShape
+    } else {
+        RoundedCornerShape(thumbnailRoundness.dp)
     }
 
     Box(modifier = modifier) {
@@ -91,6 +114,7 @@ fun Thumbnail(
                     .padding(horizontal = PlayerHorizontalPadding)
             ) {
                 BoxWithConstraints(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .weight(1f, false)
                 ) {
@@ -99,8 +123,9 @@ fun Thumbnail(
                         model = (mediaMetadata?.thumbnailUrl?.highRes() ?: mediaMetadata?.getThumbnailModel()),
                         contentDescription = null,
                         modifier = Modifier
+                            .fillMaxSize(thumbnailSize.coerceIn(0.1f, 1.0f))
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(ThumbnailCornerRadius * 2))
+                            .clip(shape)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,

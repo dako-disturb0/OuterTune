@@ -79,9 +79,6 @@
     <string name="att_translator">Penerjemah (%s)</string>
     <string name="attribution_title">Atribusi</string>
     <string name="new_interface">Tata letak antarmuka baru</string>
-    <string name="player_background_blur">Buram</string>
-    <string name="player_background_default">Ikuti tema</string>
-    <string name="player_background_gradient">Gradasi</string>
     <string name="player_background_style">Gaya latar belakang pemutar</string>
     <string name="show_liked_and_downloaded_playlist">Tampilkan playlist lagu disukai &amp; diunduh di Perpustakaan</string>
     <string name="slim_navbar_title">Bilah navigasi tipis</string>
@@ -92,6 +89,33 @@
     <string name="tablet_ui_title">Paksa tampilan tablet</string>
     <string name="tablet_ui_title_description">Aktifkan tampilan lanskap untuk layar besar, meski perangkat tidak dalam orientasi lanskap</string>
     <string name="filter_arrangement">Pengaturan filter</string>
+
+<!-- Player Customization & Live Preview -->
+    <string name="live_visual_preview">Visualisasi Contoh Ukurannya</string>
+    <string name="thumbnail_size">Ukuran Thumbnail</string>
+    <string name="thumbnail_roundness">Kelengkungan Thumbnail</string>
+    <string name="crop_video_thumbnail">Potong Thumbnail Video</string>
+    <string name="player_timeline_size">Ukuran Timeline Pemutar</string>
+    <string name="player_timeline_type">Jenis Timeline</string>
+
+    <string name="timeline_type_pin_bar">Pin Bar</string>
+    <string name="timeline_type_wavy">Wavy timeline</string>
+    <string name="timeline_type_fat_bar">Fat Bar</string>
+    <string name="timeline_type_dynamic_bar">Dynamic Bar</string>
+
+    <string name="crop_thumbnail_original">Original</string>
+    <string name="crop_thumbnail_round">Bulat</string>
+
+    <string name="player_background_follow_artwork">Mengikuti Gambar Lagu</string>
+    <string name="player_background_follow_theme">Mengikuti Tema Aplikasi</string>
+    <string name="player_background_gradient">Gradient dari gambar lagu</string>
+    <string name="player_background_blur">Gambar Lagu Di Buramkan</string>
+    <string name="player_background_color_palette">Color Palette</string>
+    <string name="player_background_animated_gradient">Animated Gradient</string>
+    <string name="player_background_original">Original</string>
+
+    <string name="color_palette_picker_title">Palet Warna Kustom</string>
+    <string name="color_palette_hex_input">Kode Warna HEX</string>
     <string name="like_autodownload">Unduh otomatis lagu yang disukai</string>
     <string name="token_adv_login_description">Ini adalah metode masuk TINGKAT LANJUT. Sebagai alternatif dari portal web, Anda dapat langsung memasukkan atau memperbarui token masuk Anda di sini. Contohnya, ini dapat mempercepat proses masuk di beberapa perangkat. Perlu diingat bahwa format token apa pun yang tidak valid dan gagal diurai oleh aplikasi tidak akan diterima</string>
     <string name="token_hidden">Ketuk untuk menampilkan token</string>

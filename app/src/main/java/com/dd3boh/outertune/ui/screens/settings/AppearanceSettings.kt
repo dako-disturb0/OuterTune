@@ -65,11 +65,7 @@ fun AppearanceSettings(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            ThemePlayerFrag()
-        }
+        ThemePlayerFrag()
         Spacer(modifier = Modifier.height(16.dp))
 
         ElevatedCard(
