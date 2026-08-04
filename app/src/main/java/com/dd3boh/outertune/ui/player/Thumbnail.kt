@@ -44,6 +44,7 @@ import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.Lyrics
+import com.dd3boh.outertune.ui.utils.highRes
 import com.dd3boh.outertune.utils.rememberPreference
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -94,7 +95,8 @@ fun Thumbnail(
                         .weight(1f, false)
                 ) {
                     AsyncImage(
-                        model = mediaMetadata?.getThumbnailModel(),
+                        // highRes() upgrades the URL to maxresdefault / hq720 for full-screen display
+                        model = (mediaMetadata?.thumbnailUrl?.highRes() ?: mediaMetadata?.getThumbnailModel()),
                         contentDescription = null,
                         modifier = Modifier
                             .aspectRatio(1f)
