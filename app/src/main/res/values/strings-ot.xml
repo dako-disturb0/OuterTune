@@ -402,4 +402,23 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="speed_medium">Medium</string>
     <string name="speed_fast">Fast</string>
     <string name="speed_very_fast">Very fast</string>
+
+<!-- Network & DNS -->
+    <string name="network_settings_title">Networking &amp; DNS</string>
+    <string name="network_settings_description">DNS over HTTPS (DoH), proxy, and connection settings</string>
+    <string name="dns_over_https_title">DNS over HTTPS (DoH)</string>
+    <string name="dns_over_https_description">Encrypt DNS queries to secure connections and bypass ISP blocks</string>
+    <string name="dns_provider_title">DNS Provider</string>
+    <string name="dns_provider_off">Disabled (System Default)</string>
+    <string name="dns_provider_cloudflare">Cloudflare DNS (1.1.1.1)</string>
+    <string name="dns_provider_adguard">AdGuard DNS (Ad-Blocking)</string>
+    <string name="dns_provider_google">Google Public DNS (8.8.8.8)</string>
+    <string name="dns_provider_opendns">OpenDNS</string>
+    <string name="dns_provider_custom">Custom DoH Provider</string>
+    <string name="dns_custom_url_title">Custom DoH URL</string>
+    <string name="dns_custom_url_placeholder">https://dns.example.com/dns-query</string>
+    <string name="dns_test_connection">Test DNS Connection</string>
+    <string name="dns_test_testing">Testing connection...</string>
+    <string name="dns_test_success">Connected successfully! Response time: %d ms</string>
+    <string name="dns_test_failed">Connection failed: %s</string>
 </resources>

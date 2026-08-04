@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Interests
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.material.icons.rounded.Storage
@@ -122,6 +123,12 @@ fun SettingsScreen(
                 title = { Text(stringResource(R.string.player_and_audio)) },
                 icon = { Icon(Icons.Rounded.PlayArrow, null) },
                 onClick = { navController.navigate("settings/player") }
+            )
+            PreferenceEntry(
+                title = { Text(stringResource(R.string.network_settings_title)) },
+                description = stringResource(R.string.network_settings_description),
+                icon = { Icon(Icons.Rounded.Public, null) },
+                onClick = { navController.navigate("settings/network") }
             )
         }
         Spacer(modifier = Modifier.height(16.dp))

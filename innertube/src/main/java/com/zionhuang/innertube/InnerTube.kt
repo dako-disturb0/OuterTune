@@ -47,6 +47,13 @@ class InnerTube {
             httpClient = createClient()
         }
 
+    var dns: okhttp3.Dns? = null
+        set(value) {
+            field = value
+            httpClient.close()
+            httpClient = createClient()
+        }
+
     var useLoginForBrowse: Boolean = false
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -66,9 +73,12 @@ class InnerTube {
             deflate(0.8F)
         }
 
-        if (proxy != null) {
-            engine {
+        engine {
+            if (this@InnerTube.proxy != null) {
                 proxy = this@InnerTube.proxy
+            }
+            config {
+                this@InnerTube.dns?.let { dns(it) }
             }
         }
 

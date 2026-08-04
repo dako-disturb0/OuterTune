@@ -103,6 +103,12 @@ class App : Application(), SingletonImageLoader.Factory {
             }
         }
 
+        try {
+            com.dd3boh.outertune.utils.DnsHelper.applyDns(this)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to apply DNS: ${e.message}")
+        }
+
         if (dataStore[UseLoginForBrowse] != false) {
             YouTube.useLoginForBrowse = true
         }

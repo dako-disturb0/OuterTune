@@ -173,6 +173,10 @@ enum class LikedAutodownloadMode {
     OFF, ON, WIFI_ONLY
 }
 
+enum class DnsMode {
+    OFF, CLOUDFLARE, ADGUARD, GOOGLE, OPENDNS, CUSTOM
+}
+
 
 /*
 ---------------------------

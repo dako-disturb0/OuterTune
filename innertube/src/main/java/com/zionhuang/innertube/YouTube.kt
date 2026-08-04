@@ -94,6 +94,11 @@ object YouTube {
         set(value) {
             innerTube.proxy = value
         }
+    var dns: okhttp3.Dns?
+        get() = innerTube.dns
+        set(value) {
+            innerTube.dns = value
+        }
     var useLoginForBrowse: Boolean
         get() = innerTube.useLoginForBrowse
         set(value) {

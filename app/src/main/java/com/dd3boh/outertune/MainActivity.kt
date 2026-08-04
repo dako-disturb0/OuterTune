@@ -178,6 +178,7 @@ import com.dd3boh.outertune.ui.screens.settings.LibrariesScreen
 import com.dd3boh.outertune.ui.screens.settings.LibrarySettings
 import com.dd3boh.outertune.ui.screens.settings.LocalPlayerSettings
 import com.dd3boh.outertune.ui.screens.settings.LyricsSettings
+import com.dd3boh.outertune.ui.screens.settings.NetworkSettings
 import com.dd3boh.outertune.ui.screens.settings.PlayerSettings
 import com.dd3boh.outertune.ui.screens.settings.SettingsScreen
 import com.dd3boh.outertune.ui.screens.settings.StorageSettings
@@ -725,6 +726,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                     composable("settings/player") {
                                         PlayerSettings(navController, scrollBehavior)
+                                    }
+                                    composable("settings/network") {
+                                        NetworkSettings(navController, scrollBehavior)
                                     }
                                     composable("settings/storage") {
                                         StorageSettings(navController, scrollBehavior)

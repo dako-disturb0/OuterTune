@@ -286,4 +286,23 @@
     <string name="oobe_welcome_tip">Untuk pengalaman terbaik, Kami merekomendasikan menyelesaikan pengaturan cepat untuk pengaturan lebih lanjut seperti tema, akun YouTube, media lokal, Dan unduhan.</string>
     <string name="oobe_cache_title">Cache lagu</string>
     <string name="oobe_cache_subtitle">Pilih ukuran cache untuk lagu anda, ini bisa membantu mengurangi penggunaan internet atau masalah playback API YouTube</string>
+
+<!-- Network & DNS -->
+    <string name="network_settings_title">Jaringan &amp; DNS</string>
+    <string name="network_settings_description">DNS over HTTPS (DoH), proxy, dan pengaturan koneksi</string>
+    <string name="dns_over_https_title">DNS over HTTPS (DoH)</string>
+    <string name="dns_over_https_description">Enkripsi kueri DNS untuk mengamankan koneksi &amp; melewati pemblokiran ISP</string>
+    <string name="dns_provider_title">Penyedia DNS</string>
+    <string name="dns_provider_off">Nonaktif (Bawaan Sistem)</string>
+    <string name="dns_provider_cloudflare">Cloudflare DNS (1.1.1.1)</string>
+    <string name="dns_provider_adguard">AdGuard DNS (Blokir Iklan)</string>
+    <string name="dns_provider_google">Google Public DNS (8.8.8.8)</string>
+    <string name="dns_provider_opendns">OpenDNS</string>
+    <string name="dns_provider_custom">Penyedia DNS Kustom</string>
+    <string name="dns_custom_url_title">URL DoH Kustom</string>
+    <string name="dns_custom_url_placeholder">https://dns.example.com/dns-query</string>
+    <string name="dns_test_connection">Uji Koneksi DNS</string>
+    <string name="dns_test_testing">Menguji koneksi...</string>
+    <string name="dns_test_success">Berhasil terhubung! Waktu respon: %d ms</string>
+    <string name="dns_test_failed">Gagal terhubung: %s</string>
 </resources>
