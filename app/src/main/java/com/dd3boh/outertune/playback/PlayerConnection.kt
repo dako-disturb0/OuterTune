@@ -71,6 +71,11 @@ class PlayerConnection(
         }
     }.stateIn(scope, SharingStarted.Lazily, null)
 
+    val currentFormat = mediaMetadata.flatMapLatest { meta ->
+        if (meta != null) database.format(meta.id) else flowOf(null)
+    }.stateIn(scope, SharingStarted.Lazily, null)
+
+
     private val currentMediaItemIndex = MutableStateFlow(-1)
 
     val queueWindows = MutableStateFlow<List<Timeline.Window>>(emptyList())

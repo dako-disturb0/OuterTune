@@ -14,8 +14,9 @@ import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -97,9 +98,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.media3.common.C
 import androidx.media3.common.Player.REPEAT_MODE_ALL
@@ -289,7 +292,6 @@ fun PortraitPlayer(
             if (!swipeToSkip) {
                 Thumbnail(
                     modifier = Modifier
-//                                .width(horizontalLazyGridItemWidth)
                         .animateContentSize(),
                     sliderPositionProvider = { sliderPosition },
                     showLyricsOnClick = true,
@@ -310,10 +312,7 @@ fun PortraitPlayer(
                 }
 
                 LaunchedEffect(mediaMetadata, canSkipPrevious, canSkipNext) {
-                    // When the media item changes, scroll to it
                     val index = maxOf(0, currentMediaIndex)
-
-                    // Only animate scroll when player expanded, otherwise animated scroll won't work
                     if (playerSheetState.isExpanded)
                         thumbnailLazyGridState.animateScrollToItem(index)
                     else
@@ -357,9 +356,7 @@ fun PortraitPlayer(
 
         ControlsContent(playerSheetState, queueSheetState, navController, queueBoard)
 
-
-        Spacer(Modifier.height(24.dp))
-
+        Spacer(Modifier.height(20.dp))
 
     }
 
@@ -391,7 +388,6 @@ fun LandscapePlayer(
 
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
-
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
@@ -408,7 +404,6 @@ fun LandscapePlayer(
 
     val mediaItems = listOfNotNull(previousMediaMetadata, mediaMetadata, nextMediaMetadata)
     val currentMediaIndex = mediaItems.indexOf(mediaMetadata)
-
 
     val showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
@@ -447,9 +442,7 @@ fun LandscapePlayer(
             if (!swipeToSkip) {
                 Thumbnail(
                     sliderPositionProvider = { sliderPosition },
-                    modifier = Modifier
-//                                .width(horizontalLazyGridItemWidth)
-                        .animateContentSize(),
+                    modifier = Modifier.animateContentSize(),
                     showLyricsOnClick = true,
                     customMediaMetadata = mediaMetadata
                 )
@@ -460,7 +453,6 @@ fun LandscapePlayer(
 
                 LaunchedEffect(itemScrollOffset) {
                     if (!thumbnailLazyGridState.isScrollInProgress || itemScrollOffset != 0) return@LaunchedEffect
-
                     if (currentItem > currentMediaIndex)
                         playerConnection.player.seekToNext()
                     else if (currentItem < currentMediaIndex)
@@ -468,10 +460,7 @@ fun LandscapePlayer(
                 }
 
                 LaunchedEffect(mediaMetadata, canSkipPrevious, canSkipNext) {
-                    // When the media item changes, scroll to it
                     val index = maxOf(0, currentMediaIndex)
-
-                    // Only animate scroll when player expanded, otherwise animated scroll won't work
                     if (playerSheetState.isExpanded)
                         thumbnailLazyGridState.animateScrollToItem(index)
                     else
@@ -488,7 +477,6 @@ fun LandscapePlayer(
                     )
                 }
                 val horizontalLazyGridItemWidth = maxWidth * horizontalLazyGridItemWidthFactor
-
 
                 LazyHorizontalGrid(
                     state = thumbnailLazyGridState,
@@ -517,15 +505,12 @@ fun LandscapePlayer(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                // "percentage to half width", not "percentage of width"
                 .weight(if (showLyrics) 0.65f else 1f, false)
                 .animateContentSize()
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
         ) {
             Spacer(Modifier.weight(1f))
-
             ControlsContent(playerSheetState, queueSheetState, navController, queueBoard, context.supportsWideScreen())
-
             Spacer(Modifier.weight(1f))
         }
     }
@@ -543,55 +528,89 @@ fun LandscapePlayer(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Audio Quality Badge  (kHz / kbps)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun AudioQualityBadge(
+    sampleRate: Int?,
+    bitrate: Int?,
+    onBackgroundColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val label = when {
+        sampleRate != null && sampleRate > 0 -> {
+            val khz = sampleRate / 1000f
+            if (khz == khz.toLong().toFloat()) "${khz.toInt()} kHz" else "${"%.1f".format(khz)} kHz"
+        }
+        bitrate != null && bitrate > 0 -> "${bitrate / 1000} kbps"
+        else -> return
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(onBackgroundColor.copy(alpha = 0.10f))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = label,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = onBackgroundColor.copy(alpha = 0.75f),
+            maxLines = 1,
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Action Buttons (Like + More)
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun ActionButtons(
     playerSheetState: BottomSheetState,
     navController: NavController,
 ) {
-    val TAG = "ActionButtons()"
-    Log.v(TAG, "PLR-AB-1")
-
     val playerConnection = LocalPlayerConnection.current ?: return
     val menuState = LocalMenuState.current
-
 
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
-    Spacer(modifier = Modifier.width(10.dp))
-
+    // Like button
     Box(
         modifier = Modifier
-            .offset(y = 5.dp)
-            .size(36.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.primary)
+            .size(38.dp)
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
     ) {
         ResizableIconButton(
             icon = if (currentSong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(24.dp),
+                .size(20.dp),
             onClick = playerConnection::toggleLike
         )
     }
 
-    Spacer(modifier = Modifier.width(7.dp))
+    Spacer(modifier = Modifier.width(8.dp))
 
+    // More / menu button
     Box(
         modifier = Modifier
-            .offset(y = 5.dp)
-            .size(36.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.primary)
+            .size(38.dp)
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
     ) {
         ResizableIconButton(
             icon = Icons.Rounded.MoreVert,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier
-                .size(24.dp)
+                .size(20.dp)
                 .align(Alignment.Center),
             onClick = {
                 menuState.show {
@@ -607,6 +626,9 @@ fun ActionButtons(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Controls Content — M3 Expressive redesign
+// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -617,31 +639,32 @@ fun ControlsContent(
     queueBoard: QueueBoard,
     showQueueHint: Boolean = false,
 ) {
-    val TAG = "ControlsContent()"
-    Log.v(TAG, "PLR-CC-1")
-
     val haptic = LocalHapticFeedback.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
-
+    val currentFormat by playerConnection.currentFormat.collectAsState()
 
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
+    // M3 Expressive: play button morphs between pill shapes
     val playPauseRoundness by animateDpAsState(
-        targetValue = if (isPlaying) 24.dp else 36.dp,
-        animationSpec = tween(durationMillis = 100, easing = LinearEasing),
+        targetValue = if (isPlaying) 20.dp else 36.dp,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
         label = "playPauseRoundness"
     )
-
+    val playButtonWidth by animateDpAsState(
+        targetValue = if (isPlaying) 100.dp else 80.dp,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "playButtonWidth"
+    )
 
     val seekIncrement by rememberEnumPreference(
         key = SeekIncrementKey,
         defaultValue = SeekIncrement.OFF
     )
-
     val showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
     val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
@@ -655,24 +678,20 @@ fun ControlsContent(
         defaultValue = DEFAULT_PLAYER_BACKGROUND
     )
 
-
     val onBackgroundColor = when (playerBackground) {
         PlayerBackgroundStyle.FOLLOW_THEME -> MaterialTheme.colorScheme.secondary
         else ->
-            if (useDarkTheme)
-                MaterialTheme.colorScheme.onSurface
+            if (useDarkTheme) MaterialTheme.colorScheme.onSurface
             else {
                 val c = MaterialTheme.colorScheme.secondary
                 c.copy(alpha = 1f, red = c.red - 0.2f, green = c.green - 0.2f, blue = c.blue - 0.2f)
             }
     }
 
-
     val playbackState by playerConnection.playbackState.collectAsState()
     var duration by rememberSaveable(playbackState) {
         mutableLongStateOf(playerConnection.player.duration)
     }
-
     var position by remember(playbackState) {
         mutableLongStateOf(playerConnection.player.currentPosition)
     }
@@ -687,105 +706,111 @@ fun ControlsContent(
         }
     }
 
+    var sliderPosition by remember { mutableStateOf<Long?>(null) }
 
-    var sliderPosition by remember {
-        mutableStateOf<Long?>(null)
-    }
-
-    BoxWithConstraints() {
+    BoxWithConstraints {
         val maxW = maxWidth
         val compactWidth = maxW < 400.dp
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // action buttons for landscape (above title)
+
+            // ── Top row: action buttons for compact/landscape ──────────────
             if (compactWidth) {
                 Row(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = PlayerHorizontalPadding, end = PlayerHorizontalPadding, bottom = 16.dp)
+                        .padding(horizontal = PlayerHorizontalPadding, vertical = 8.dp)
                 ) {
                     ActionButtons(playerSheetState, navController)
                 }
             }
 
+            // ── Title + Artist + Badge row ─────────────────────────────────
             Row(
-                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = PlayerHorizontalPadding)
             ) {
-                Row {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = mediaMetadata?.title ?: "",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = onBackgroundColor,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .basicMarquee(
-                                    iterations = 1,
-                                    initialDelayMillis = 3000
-                                )
-                                .clickable(enabled = mediaMetadata?.album != null) {
-                                    navController.navigate("album/${mediaMetadata?.album!!.id}")
-                                    playerSheetState.collapseSoft()
-                                }
-                        )
+                Column(modifier = Modifier.weight(1f)) {
+                    // Song title
+                    Text(
+                        text = mediaMetadata?.title ?: "",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = onBackgroundColor,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .basicMarquee(iterations = 1, initialDelayMillis = 3000)
+                            .clickable(enabled = mediaMetadata?.album != null) {
+                                navController.navigate("album/${mediaMetadata?.album!!.id}")
+                                playerSheetState.collapseSoft()
+                            }
+                    )
 
-                        Row {
+                    Spacer(Modifier.height(2.dp))
+
+                    // Artist row + audio badge
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Artists
+                        Row(modifier = Modifier.weight(1f, fill = false)) {
                             mediaMetadata?.artists?.fastForEachIndexed { index, artist ->
                                 Text(
                                     text = artist.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = onBackgroundColor,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = onBackgroundColor.copy(alpha = 0.75f),
                                     maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier
-                                        .basicMarquee(
-                                            iterations = 1,
-                                            initialDelayMillis = 5000
-                                        )
+                                        .basicMarquee(iterations = 1, initialDelayMillis = 5000)
                                         .clickable(enabled = artist.id != null) {
                                             navController.navigate("artist/${artist.id}")
                                             playerSheetState.collapseSoft()
                                         }
                                 )
-
                                 if (index != mediaMetadata?.artists?.lastIndex) {
                                     Text(
                                         text = ", ",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = onBackgroundColor
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = onBackgroundColor.copy(alpha = 0.75f)
                                     )
                                 }
-                            } ?: Text(
-                                text = "",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = onBackgroundColor,
-                                maxLines = 1,
-                            )
+                            }
                         }
-                    }
 
-                    // action buttons for portrait (inline with title)
-                    if (!compactWidth) {
-                        ActionButtons(playerSheetState, navController)
+                        // Audio quality badge (kHz or kbps)
+                        AudioQualityBadge(
+                            sampleRate = currentFormat?.sampleRate,
+                            bitrate = currentFormat?.bitrate,
+                            onBackgroundColor = onBackgroundColor,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
                     }
+                }
+
+                // Action buttons for portrait (inline with title)
+                if (!compactWidth) {
+                    Spacer(Modifier.width(12.dp))
+                    ActionButtons(playerSheetState, navController)
                 }
             }
 
+            Spacer(Modifier.height(12.dp))
+
+            // ── Seek slider ────────────────────────────────────────────────
             Slider(
                 value = (sliderPosition ?: position).toFloat(),
                 valueRange = 0f..(if (duration == C.TIME_UNSET) 0f else duration.toFloat()),
-                onValueChange = {
-                    sliderPosition = it.toLong()
-                    // slider too granular for this haptic to feel right
-//                    haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                },
+                onValueChange = { sliderPosition = it.toLong() },
                 onValueChangeFinished = {
                     sliderPosition?.let {
                         playerConnection.player.seekTo(it)
@@ -798,105 +823,98 @@ fun ControlsContent(
                 track = { sliderState ->
                     PlayerSliderTrack(
                         sliderState = sliderState,
-                        colors = SliderDefaults.colors()
+                        colors = SliderDefaults.colors(),
+                        trackHeight = 8.dp,
                     )
                 },
                 modifier = Modifier.padding(horizontal = PlayerHorizontalPadding)
             )
 
+            // ── Position / Duration labels ─────────────────────────────────
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = PlayerHorizontalPadding + 4.dp)
+                    .padding(horizontal = PlayerHorizontalPadding + 2.dp)
             ) {
                 Text(
                     text = makeTimeString(sliderPosition ?: position),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = onBackgroundColor,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 11.sp,
+                    color = onBackgroundColor.copy(alpha = 0.6f),
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
-
                 Text(
                     text = if (duration != C.TIME_UNSET) makeTimeString(duration) else "",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = onBackgroundColor,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 11.sp,
+                    color = onBackgroundColor.copy(alpha = 0.6f),
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
+            // ── Playback controls row ──────────────────────────────────────
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = PlayerHorizontalPadding)
+                    .padding(horizontal = PlayerHorizontalPadding - 8.dp)
             ) {
                 val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
 
-                Box(modifier = Modifier.weight(1f)) {
+                // Shuffle
+                ResizableIconButton(
+                    icon = if (shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle_off,
+                    modifier = Modifier.size(28.dp),
+                    color = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else onBackgroundColor.copy(alpha = 0.6f),
+                    enabled = playerConnection.player.currentMediaItem != null,
+                    onClick = {
+                        playerConnection.triggerShuffle()
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                    }
+                )
+
+                // Skip previous
+                ResizableIconButton(
+                    icon = Icons.Rounded.SkipPrevious,
+                    enabled = canSkipPrevious,
+                    modifier = Modifier.size(36.dp),
+                    color = onBackgroundColor,
+                    onClick = {
+                        if (playerConnection.player.currentMediaItem == null) queueBoard.setCurrQueue()
+                        playerConnection.player.seekToPrevious()
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                    }
+                )
+
+                // Seek back (optional)
+                if (seekIncrement != SeekIncrement.OFF) {
                     ResizableIconButton(
-                        icon = if (shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle_off,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .padding(4.dp)
-                            .align(Alignment.Center),
+                        icon = Icons.Rounded.FastRewind,
+                        modifier = Modifier.size(28.dp),
                         color = onBackgroundColor,
                         enabled = playerConnection.player.currentMediaItem != null,
                         onClick = {
-                            playerConnection.triggerShuffle()
-                            haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                            playerConnection.player.seekTo(
+                                playerConnection.player.currentPosition - seekIncrement.millisec
+                            )
                         }
                     )
                 }
 
-                Box(modifier = Modifier.weight(1f)) {
-                    ResizableIconButton(
-                        icon = Icons.Rounded.SkipPrevious,
-                        enabled = canSkipPrevious,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .align(Alignment.Center),
-                        color = onBackgroundColor,
-                        onClick = {
-                            if (playerConnection.player.currentMediaItem == null) {
-                                queueBoard.setCurrQueue()
-                            }
-                            playerConnection.player.seekToPrevious()
-                            haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                        }
-                    )
-                }
-
-                if (seekIncrement != SeekIncrement.OFF) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        ResizableIconButton(
-                            icon = Icons.Rounded.FastRewind,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .align(Alignment.Center),
-                            color = onBackgroundColor,
-                            enabled = playerConnection.player.currentMediaItem != null,
-                            onClick = {
-                                playerConnection.player.seekTo(playerConnection.player.currentPosition - seekIncrement.millisec)
-                            }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.width(8.dp))
-
+                // ── PLAY / PAUSE pill button (M3 Expressive) ──────────────
                 Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(if (maxW >= 320.dp) if (showLyrics) 56.dp else 72.dp else 42.dp)
-                        .animateContentSize()
+                        .width(playButtonWidth)
+                        .height(56.dp)
                         .clip(RoundedCornerShape(playPauseRoundness))
                         .background(MaterialTheme.colorScheme.primary)
-                        .expressiveClickable(pressedScale = 0.88f) {
+                        .expressiveClickable(pressedScale = 0.90f) {
                             if (playerConnection.player.currentMediaItem == null) {
                                 queueBoard.setCurrQueue()
                                 playerConnection.player.togglePlayPause()
@@ -909,90 +927,84 @@ fun ControlsContent(
                             haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                         }
                 ) {
-                    Image(
-                        imageVector = if (playbackState == STATE_ENDED) Icons.Rounded.Replay else if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(36.dp)
-                    )
-                }
-
-                Spacer(Modifier.width(8.dp))
-
-                if (seekIncrement != SeekIncrement.OFF) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        ResizableIconButton(
-                            icon = Icons.Rounded.FastForward,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .align(Alignment.Center),
-                            color = onBackgroundColor,
-                            enabled = playerConnection.player.currentMediaItem != null,
-                            onClick = {
-                                //ExoPlayer seek increment can only be set in builder
-                                //playerConnection.player.seekForward()
-                                playerConnection.player.seekTo(playerConnection.player.currentPosition + seekIncrement.millisec)
-                            }
+                    AnimatedContent(
+                        targetState = if (playbackState == STATE_ENDED) 2 else if (isPlaying) 1 else 0,
+                        transitionSpec = {
+                            fadeIn(tween(150)) togetherWith fadeOut(tween(150))
+                        },
+                        label = "playPauseIcon"
+                    ) { state ->
+                        Image(
+                            imageVector = when (state) {
+                                2 -> Icons.Rounded.Replay
+                                1 -> Icons.Rounded.Pause
+                                else -> Icons.Rounded.PlayArrow
+                            },
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
+                            modifier = Modifier.size(32.dp)
                         )
                     }
                 }
 
-
-
-                Box(modifier = Modifier.weight(1f)) {
+                // Seek forward (optional)
+                if (seekIncrement != SeekIncrement.OFF) {
                     ResizableIconButton(
-                        icon = Icons.Rounded.SkipNext,
-                        enabled = canSkipNext,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .align(Alignment.Center),
-                        color = onBackgroundColor,
-                        onClick = {
-                            playerConnection.player.seekToNext()
-                            haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                        }
-                    )
-                }
-
-                Box(modifier = Modifier.weight(1f)) {
-                    ResizableIconButton(
-                        icon = when (repeatMode) {
-                            REPEAT_MODE_OFF -> R.drawable.repeat_off
-                            REPEAT_MODE_ALL -> R.drawable.repeat_on
-                            REPEAT_MODE_ONE -> R.drawable.repeat_one
-                            else -> throw IllegalStateException()
-                        },
-                        modifier = Modifier
-                            .size(32.dp)
-                            .padding(4.dp)
-                            .align(Alignment.Center),
+                        icon = Icons.Rounded.FastForward,
+                        modifier = Modifier.size(28.dp),
                         color = onBackgroundColor,
                         enabled = playerConnection.player.currentMediaItem != null,
                         onClick = {
-                            playerConnection.player.toggleRepeatMode()
-                            haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                            playerConnection.player.seekTo(
+                                playerConnection.player.currentPosition + seekIncrement.millisec
+                            )
                         }
                     )
                 }
+
+                // Skip next
+                ResizableIconButton(
+                    icon = Icons.Rounded.SkipNext,
+                    enabled = canSkipNext,
+                    modifier = Modifier.size(36.dp),
+                    color = onBackgroundColor,
+                    onClick = {
+                        playerConnection.player.seekToNext()
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                    }
+                )
+
+                // Repeat
+                ResizableIconButton(
+                    icon = when (repeatMode) {
+                        REPEAT_MODE_OFF -> R.drawable.repeat_off
+                        REPEAT_MODE_ALL -> R.drawable.repeat_on
+                        REPEAT_MODE_ONE -> R.drawable.repeat_one
+                        else -> throw IllegalStateException()
+                    },
+                    modifier = Modifier.size(28.dp),
+                    color = if (repeatMode != REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else onBackgroundColor.copy(alpha = 0.6f),
+                    enabled = playerConnection.player.currentMediaItem != null,
+                    onClick = {
+                        playerConnection.player.toggleRepeatMode()
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                    }
+                )
             }
 
-            // queue hint for landscape
+            // ── Queue hint for landscape ───────────────────────────────────
             if (showQueueHint) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .height(QueuePeekHeight)
                         .fillMaxWidth()
-                        .clickable(
-                            onClick = {
-                                queueSheetState.expandSoft()
-                                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                            }
-                        )
+                        .clickable {
+                            queueSheetState.expandSoft()
+                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        }
                 ) {
                     IconButton(onClick = {
                         queueSheetState.expandSoft()
@@ -1009,6 +1021,10 @@ fun ControlsContent(
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Player Background
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun PlayerBackground(
@@ -1029,12 +1045,8 @@ fun PlayerBackground(
     ) {
 
         val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
-        var gradientColors by remember {
-            mutableStateOf<List<Color>>(emptyList())
-        }
+        var gradientColors by remember { mutableStateOf<List<Color>>(emptyList()) }
 
-
-        // gradient colours
         LaunchedEffect(mediaMetadata, playerBackground) {
             if (playerBackground != PlayerBackgroundStyle.GRADIENT || context.isPowerSaver()) return@LaunchedEffect
 
@@ -1045,23 +1057,16 @@ fun PlayerBackground(
                         .allowHardware(false)
                         .build()
                 )
-
                 val bitmap = result.image?.toBitmap()?.extractGradientColors()
-                bitmap?.let {
-                    gradientColors = it
-                }
+                bitmap?.let { gradientColors = it }
             }
         }
 
-
         AnimatedContent(
             targetState = mediaMetadata,
-            transitionSpec = {
-                fadeIn(tween(1000)).togetherWith(fadeOut(tween(1000)))
-            }
+            transitionSpec = { fadeIn(tween(1000)).togetherWith(fadeOut(tween(1000))) }
         ) { metadata ->
             if (playerBackground == PlayerBackgroundStyle.BLUR) {
-                Log.v(TAG, "PLR-2.2a")
                 AsyncImage(
                     model = metadata?.getThumbnailModel(100, 100),
                     contentDescription = null,
@@ -1076,12 +1081,9 @@ fun PlayerBackground(
 
         AnimatedContent(
             targetState = gradientColors,
-            transitionSpec = {
-                fadeIn(tween(1000)).togetherWith(fadeOut(tween(1000)))
-            }
+            transitionSpec = { fadeIn(tween(1000)).togetherWith(fadeOut(tween(1000))) }
         ) { colors ->
             if (playerBackground == PlayerBackgroundStyle.GRADIENT && colors.size >= 2) {
-                Log.v(TAG, "PLR-2.2b")
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -1091,7 +1093,6 @@ fun PlayerBackground(
         }
 
         if (playerBackground != PlayerBackgroundStyle.FOLLOW_THEME && showLyrics) {
-            Log.v(TAG, "PLR-2.2c")
             Box(
                 modifier = Modifier
                     .fillMaxSize()
