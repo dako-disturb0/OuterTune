@@ -1,0 +1,26 @@
+{
+  "name": "Kotlin & Android Full Setup",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "containerEnv": {
+    "ANDROID_HOME": "/opt/android-sdk",
+    "KOTLIN_HOME": "/opt/kotlin"
+  },
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/opt/kotlin/bin"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "kotlin.languageServer.enabled": true
+      },
+      "extensions": [
+        "fwcd.kotlin",
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-gradle"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
