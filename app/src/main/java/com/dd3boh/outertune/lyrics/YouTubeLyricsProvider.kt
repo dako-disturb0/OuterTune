@@ -18,6 +18,9 @@ object YouTubeLyricsProvider : LyricsProvider {
     override fun isEnabled(context: Context) = true
 
     override suspend fun getLyrics(id: String, title: String, artist: String, duration: Int): Result<String> = runCatching {
+        if (id.length != 11 || id.startsWith("local:")) {
+            throw IllegalArgumentException("Not a valid YouTube video ID: $id")
+        }
         val nextResult = YouTube.next(WatchEndpoint(videoId = id)).getOrThrow()
         YouTube.lyrics(
             endpoint = nextResult.lyricsEndpoint ?: throw IllegalStateException("Lyrics endpoint not found")

@@ -18,8 +18,8 @@ object BetterLyricsProvider : LyricsProvider {
         artist: String,
         duration: Int,
     ): Result<String> = BetterLyrics.getLyrics(
-        title = title,
-        artist = artist,
+        title = LyricsSanitizer.cleanTitle(title),
+        artist = LyricsSanitizer.cleanArtist(artist),
         durationSeconds = duration
     )
 
@@ -31,8 +31,8 @@ object BetterLyricsProvider : LyricsProvider {
         callback: (String) -> Unit,
     ) {
         BetterLyrics.getAllLyrics(
-            title = title,
-            artist = artist,
+            title = LyricsSanitizer.cleanTitle(title),
+            artist = LyricsSanitizer.cleanArtist(artist),
             durationSeconds = duration,
             callback = callback,
         )

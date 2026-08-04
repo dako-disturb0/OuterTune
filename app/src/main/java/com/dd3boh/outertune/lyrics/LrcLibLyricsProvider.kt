@@ -20,7 +20,11 @@ object LrcLibLyricsProvider : LyricsProvider {
         title: String,
         artist: String,
         duration: Int,
-    ): Result<String> = LrcLib.getLyrics(title, artist, duration)
+    ): Result<String> = LrcLib.getLyrics(
+        LyricsSanitizer.cleanTitle(title),
+        LyricsSanitizer.cleanArtist(artist),
+        duration
+    )
 
     override suspend fun getAllLyrics(
         id: String,
@@ -29,6 +33,12 @@ object LrcLibLyricsProvider : LyricsProvider {
         duration: Int,
         callback: (String) -> Unit,
     ) {
-        LrcLib.getAllLyrics(title, artist, duration, null, callback)
+        LrcLib.getAllLyrics(
+            LyricsSanitizer.cleanTitle(title),
+            LyricsSanitizer.cleanArtist(artist),
+            duration,
+            null,
+            callback
+        )
     }
 }

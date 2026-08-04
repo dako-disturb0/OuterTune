@@ -18,8 +18,8 @@ object PaxsenixLyricsProvider : LyricsProvider {
         artist: String,
         duration: Int,
     ): Result<String> = PaxsenixLyrics.getLyrics(
-        title = title,
-        artist = artist,
+        title = LyricsSanitizer.cleanTitle(title),
+        artist = LyricsSanitizer.cleanArtist(artist),
         durationSeconds = duration,
     )
 
@@ -31,8 +31,8 @@ object PaxsenixLyricsProvider : LyricsProvider {
         callback: (String) -> Unit,
     ) {
         PaxsenixLyrics.getAllLyrics(
-            title = title,
-            artist = artist,
+            title = LyricsSanitizer.cleanTitle(title),
+            artist = LyricsSanitizer.cleanArtist(artist),
             duration = duration,
             callback = callback,
         )

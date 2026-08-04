@@ -12,9 +12,18 @@ object KuGouLyricsProvider : LyricsProvider {
         context.dataStore[EnableKugouKey] ?: true
 
     override suspend fun getLyrics(id: String, title: String, artist: String, duration: Int): Result<String> =
-        KuGou.getLyrics(title, artist, duration)
+        KuGou.getLyrics(
+            LyricsSanitizer.cleanTitle(title),
+            LyricsSanitizer.cleanArtist(artist),
+            duration
+        )
 
     override suspend fun getAllLyrics(id: String, title: String, artist: String, duration: Int, callback: (String) -> Unit) {
-        KuGou.getAllPossibleLyricsOptions(title, artist, duration, callback)
+        KuGou.getAllPossibleLyricsOptions(
+            LyricsSanitizer.cleanTitle(title),
+            LyricsSanitizer.cleanArtist(artist),
+            duration,
+            callback
+        )
     }
 }

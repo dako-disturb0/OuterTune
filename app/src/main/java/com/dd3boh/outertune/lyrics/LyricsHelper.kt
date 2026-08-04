@@ -182,13 +182,17 @@ class LyricsHelper @Inject constructor(
      * Lookup lyrics from remote providers, respecting the user-configured priority order.
      */
     private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): String? {
+        val cleanTitle = LyricsSanitizer.cleanTitle(mediaMetadata.title)
+        val cleanArtist = LyricsSanitizer.cleanArtist(mediaMetadata.artists.joinToString { it.name })
+
+        // Primary pass with cleaned title & artist
         getOrderedProviders().forEach { provider ->
             if (provider.isEnabled(context)) {
                 try {
                     provider.getLyrics(
                         mediaMetadata.id,
-                        mediaMetadata.title,
-                        mediaMetadata.artists.joinToString { it.name },
+                        cleanTitle,
+                        cleanArtist,
                         mediaMetadata.duration
                     ).onSuccess { lyrics ->
                         if (lyrics.isNotBlank() && lyrics != LYRICS_NOT_FOUND) {
@@ -204,6 +208,31 @@ class LyricsHelper @Inject constructor(
                 }
             }
         }
+
+        // Secondary fallback pass with raw title if cleanTitle differs
+        if (cleanTitle != mediaMetadata.title) {
+            getOrderedProviders().forEach { provider ->
+                if (provider.isEnabled(context)) {
+                    try {
+                        provider.getLyrics(
+                            mediaMetadata.id,
+                            mediaMetadata.title,
+                            cleanArtist,
+                            mediaMetadata.duration
+                        ).onSuccess { lyrics ->
+                            if (lyrics.isNotBlank() && lyrics != LYRICS_NOT_FOUND) {
+                                return lyrics
+                            }
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // ignore
+                    }
+                }
+            }
+        }
+
         return null
     }
 
@@ -231,7 +260,9 @@ class LyricsHelper @Inject constructor(
         duration: Int,
         callback: (LyricsResult) -> Unit,
     ) {
-        val cacheKey = lyricsCacheKey(songTitle, songArtists)
+        val cleanTitle = LyricsSanitizer.cleanTitle(songTitle)
+        val cleanArtist = LyricsSanitizer.cleanArtist(songArtists)
+        val cacheKey = lyricsCacheKey(cleanTitle, cleanArtist)
         cache.get(cacheKey)?.let { results ->
             results.forEach {
                 callback(it)
@@ -243,7 +274,7 @@ class LyricsHelper @Inject constructor(
             getOrderedProviders().forEach { provider ->
                 if (provider.isEnabled(context)) {
                     try {
-                        provider.getAllLyrics(mediaId, songTitle, songArtists, duration) { lyrics ->
+                        provider.getAllLyrics(mediaId, cleanTitle, cleanArtist, duration) { lyrics ->
                             if (lyrics.isNotBlank() && lyrics != LYRICS_NOT_FOUND) {
                                 val result = LyricsResult(provider.name, lyrics)
                                 allResult += result
