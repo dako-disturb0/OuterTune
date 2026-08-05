@@ -597,11 +597,11 @@ private fun StatChip(label: String, value: String) {
 @Composable
 fun ColumnScope.LyricAdvancedFrag() {
     val (lyricUpdateSpeed, onLyricsUpdateSpeedChange) = rememberEnumPreference(LyricUpdateSpeed, Speed.MEDIUM)
-    val (lyricsFancy, onLyricsFancyChange) = rememberPreference(LyricKaraokeEnable, false)
+    val (lyricsFancy, onLyricsFancyChange) = rememberPreference(LyricKaraokeEnable, true)
     val (syncedLyricsClickable, onSyncedLyricsClickable) = rememberPreference(LyricClickable, defaultValue = true)
     val (preloadKaraokeLyrics, onPreloadKaraokeLyricsChange) = rememberPreference(
         com.dd3boh.outertune.constants.PreloadKaraokeLyricsKey,
-        defaultValue = false
+        defaultValue = true
     )
 
     ElevatedCard(

@@ -112,7 +112,7 @@ class LyricsHelper @Inject constructor(
         val trim = context.dataStore.get(LyricTrimKey, defaultValue = false)
         val multiline = context.dataStore.get(MultilineLrcKey, defaultValue = true)
         val prefLocal = context.dataStore.get(LyricSourcePrefKey, true)
-        val preloadKaraoke = context.dataStore.get(com.dd3boh.outertune.constants.PreloadKaraokeLyricsKey, defaultValue = false)
+        val preloadKaraoke = context.dataStore.get(com.dd3boh.outertune.constants.PreloadKaraokeLyricsKey, defaultValue = true)
         val cacheKey = mediaMetadata.lyricsCacheKey
 
         if (forceRefresh) {
