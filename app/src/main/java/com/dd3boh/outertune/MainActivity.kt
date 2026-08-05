@@ -235,8 +235,8 @@ class MainActivity : ComponentActivity() {
         Log.i(MAIN_TAG, "onDestroy() called. isFinishing = $isFinishing")
         try {
             connectivityObserver.unregister()
-        } catch (e: UninitializedPropertyAccessException) {
-            // lol
+        } catch (e: Exception) {
+            // ignore if not initialized or already unregistered
         }
         // https://github.com/androidx/media/issues/805
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (playerConnection?.player?.playWhenReady != true || playerConnection?.player?.mediaItemCount == 0)) {
@@ -255,7 +255,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         lifecycle.addObserver(controllerViewModel)
         controllerViewModel.addControllerCallback(lifecycle) { controller, _ ->
-            playerConnection = PlayerConnection(controllerViewModel, database)
+            if (controllerViewModel.getService() != null) {
+                playerConnection = PlayerConnection(controllerViewModel, database)
+            }
         }
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -315,12 +317,16 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(useDarkTheme) {
                 setSystemBarAppearance(useDarkTheme)
             }
-            try {
-                connectivityObserver.unregister()
-            } catch (e: UninitializedPropertyAccessException) {
-                // lol
+            DisposableEffect(Unit) {
+                connectivityObserver = NetworkConnectivityObserver(this@MainActivity)
+                onDispose {
+                    try {
+                        connectivityObserver.unregister()
+                    } catch (e: Exception) {
+                        Log.e(MAIN_TAG, "Failed to unregister connectivityObserver", e)
+                    }
+                }
             }
-            connectivityObserver = NetworkConnectivityObserver(this@MainActivity)
             val isNetworkConnected by connectivityObserver.networkStatus.collectAsState(true)
 
 
@@ -806,16 +812,15 @@ class MainActivity : ComponentActivity() {
                                                     y = (bottomInset + NavigationBarHeight).roundToPx()
                                                 )
                                             } else {
-                                                val slideOffset =
-                                                    (bottomInset + NavigationBarHeight) * playerBottomSheetState.progress.coerceIn(
-                                                        0f,
-                                                        1f
-                                                    )
+                                                val progressCoerced = playerBottomSheetState.progress.coerceIn(0f, 1f)
+                                                val safeProgress = if (progressCoerced.isNaN()) 0f else progressCoerced
+                                                val slideOffset = (bottomInset + NavigationBarHeight) * safeProgress
                                                 val hideOffset =
                                                     (bottomInset + NavigationBarHeight) * (1 - navigationBarHeight / NavigationBarHeight)
+                                                val totalOffset = slideOffset + hideOffset
                                                 IntOffset(
                                                     x = 0,
-                                                    y = (slideOffset + hideOffset).roundToPx()
+                                                    y = if (totalOffset.value.isNaN()) 0 else totalOffset.roundToPx()
                                                 )
                                             }
                                         }
@@ -859,12 +864,17 @@ class MainActivity : ComponentActivity() {
                                                     } else if (navigationItems.none { scr -> navBackStackEntry?.destination?.hierarchy?.any { it.route == scr.route } == true }) {
                                                         navController.navigateUp()
                                                     } else {
-                                                        navController.navigate(screen.route) {
-                                                            popUpTo(navController.graph.startDestinationId) {
-                                                                saveState = true
+                                                        val startId = runCatching { navController.graph.startDestinationId }.getOrNull()
+                                                        if (startId != null) {
+                                                            navController.navigate(screen.route) {
+                                                                popUpTo(startId) {
+                                                                    saveState = true
+                                                                }
+                                                                launchSingleTop = true
+                                                                restoreState = true
                                                             }
-                                                            launchSingleTop = true
-                                                            restoreState = true
+                                                        } else {
+                                                            navController.navigate(screen.route)
                                                         }
                                                     }
 
@@ -912,13 +922,15 @@ class MainActivity : ComponentActivity() {
                                                     y = (bottomInset + NavigationBarHeight).roundToPx()
                                                 )
                                             } else {
+                                                val progressCoerced = playerBottomSheetState.progress.coerceIn(0f, 1f)
+                                                val safeProgress = if (progressCoerced.isNaN()) 0f else progressCoerced
                                                 val slideOffset =
-                                                    (bottomInset + NavigationBarHeight + leftInset.value) *
-                                                            playerBottomSheetState.progress.coerceIn(0f, 1f)
+                                                    (bottomInset + NavigationBarHeight + leftInset.value) * safeProgress
                                                 val hideOffset =
                                                     (bottomInset + NavigationBarHeight) * (1 - navigationBarHeight / NavigationBarHeight)
+                                                val totalOffset = slideOffset + hideOffset
                                                 IntOffset(
-                                                    x = -(slideOffset + hideOffset).roundToPx(),
+                                                    x = if (totalOffset.value.isNaN()) 0 else -totalOffset.roundToPx(),
                                                     y = 0
                                                 )
                                             }

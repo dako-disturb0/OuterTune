@@ -114,23 +114,31 @@ class App : Application(), SingletonImageLoader.Factory {
         }
 
         GlobalScope.launch {
-            dataStore.data
-                .map { it[VisitorDataKey] }
-                .distinctUntilChanged()
-                .collect { visitorData ->
-                    YouTube.visitorData = visitorData
-                        ?.takeIf { it != "null" } // Previously visitorData was sometimes saved as "null" due to a bug
-                        ?: YouTube.visitorData().onFailure {
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(this@App, "Failed to get visitorData.", LENGTH_SHORT).show()
-                            }
-                            reportException(it)
-                        }.getOrNull()?.also { newVisitorData ->
-                            dataStore.edit { settings ->
-                                settings[VisitorDataKey] = newVisitorData
-                            }
+            try {
+                dataStore.data
+                    .map { it[VisitorDataKey] }
+                    .distinctUntilChanged()
+                    .collect { visitorData ->
+                        try {
+                            YouTube.visitorData = visitorData
+                                ?.takeIf { it != "null" } // Previously visitorData was sometimes saved as "null" due to a bug
+                                ?: YouTube.visitorData().onFailure {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(this@App, "Failed to get visitorData.", LENGTH_SHORT).show()
+                                    }
+                                    reportException(it)
+                                }.getOrNull()?.also { newVisitorData ->
+                                    dataStore.edit { settings ->
+                                        settings[VisitorDataKey] = newVisitorData
+                                    }
+                                }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to process visitorData", e)
                         }
-                }
+                    }
+            } catch (e: Exception) {
+                Log.e(TAG, "visitorData launch error", e)
+            }
         }
         GlobalScope.launch {
             dataStore.data
@@ -217,14 +225,18 @@ class App : Application(), SingletonImageLoader.Factory {
             private set
 
         fun forgetAccount(context: Context) {
-            runBlocking {
-                context.dataStore.edit { settings ->
-                    settings.remove(InnerTubeCookieKey)
-                    settings.remove(VisitorDataKey)
-                    settings.remove(DataSyncIdKey)
-                    settings.remove(AccountNameKey)
-                    settings.remove(AccountEmailKey)
-                    settings.remove(AccountChannelHandleKey)
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    context.dataStore.edit { settings ->
+                        settings.remove(InnerTubeCookieKey)
+                        settings.remove(VisitorDataKey)
+                        settings.remove(DataSyncIdKey)
+                        settings.remove(AccountNameKey)
+                        settings.remove(AccountEmailKey)
+                        settings.remove(AccountChannelHandleKey)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to clear account data", e)
                 }
             }
         }

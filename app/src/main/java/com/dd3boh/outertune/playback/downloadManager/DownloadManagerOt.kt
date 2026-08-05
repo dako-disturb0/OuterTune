@@ -47,7 +47,7 @@ class DownloadManagerOt(
                     if (!resp.isSuccessful) {
                         throw IllegalStateException("HTTP ${resp.code}")
                     }
-                    val body = resp.body
+                    val body = resp.body ?: throw IOException("Empty response body")
                     val total = body.contentLength()
                     var downloaded = 0L
 

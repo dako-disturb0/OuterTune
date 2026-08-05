@@ -57,7 +57,7 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
                             } catch (e: ExecutionException) {
                                 if (e.cause !is SecurityException)
                                     throw e
-                                if (e.cause!!.message != "Session rejected the connection request.")
+                                if (e.cause?.message != "Session rejected the connection request.")
                                     throw e
                                 Log.w(
                                     "MediaControllerViewMdel", "Session rejected the connection" +
@@ -130,7 +130,7 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
             if (controllerFuture?.isCancelled == false) {
                 controllerFuture?.get()?.release()
             } else {
-                throw IllegalStateException("controllerFuture?.isCancelled != false")
+                Log.w("MediaControllerVM", "controllerFuture is cancelled")
             }
         } else {
             controllerFuture?.cancel(true)
@@ -162,11 +162,16 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
 
     fun getService(): MusicService? {
         val mediaBrowser = get() ?: return null
-        mediaBrowser.sendCustomCommand(
-            SessionCommand(MusicService.COMMAND_GET_BINDER, Bundle.EMPTY),
-            Bundle.EMPTY
-        ).get().extras.run {
-            return (getBinder("music_binder") as MusicService.MusicBinder).service
+        return try {
+            val result = mediaBrowser.sendCustomCommand(
+                SessionCommand(MusicService.COMMAND_GET_BINDER, Bundle.EMPTY),
+                Bundle.EMPTY
+            ).get()
+            val binder = result.extras.getBinder("music_binder") as? MusicService.MusicBinder
+            binder?.service
+        } catch (e: Exception) {
+            Log.e("MediaControllerVM", "Failed to get service binder", e)
+            null
         }
     }
 

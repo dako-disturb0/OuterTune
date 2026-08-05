@@ -217,7 +217,7 @@ class PoTokenWebView private constructor(
     }
 
     val isExpired: Boolean
-        get() = Instant.now().isAfter(expirationInstant)
+        get() = !::expirationInstant.isInitialized || Instant.now().isAfter(expirationInstant)
     //endregion
 
     //region Handling multiple emitters

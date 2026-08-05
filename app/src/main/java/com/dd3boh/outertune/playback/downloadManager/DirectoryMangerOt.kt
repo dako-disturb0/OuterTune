@@ -90,7 +90,7 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
     }
 
     fun isExists(mediaId: String): DocumentFile? {
-        return availableFiles.find { (it as TreeDocumentFileOt).id == mediaId }
+        return availableFiles.find { (it as? TreeDocumentFileOt)?.id == mediaId }
     }
 
     fun getFilePathIfExists(mediaId: String): Uri? {

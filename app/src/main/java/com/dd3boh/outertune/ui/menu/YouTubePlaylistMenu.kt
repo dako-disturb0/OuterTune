@@ -193,7 +193,7 @@ fun YouTubePlaylistMenu(
             ) {
                 playerConnection.playQueue(
                     ListQueue(
-                        playlistId = playlist.playEndpoint!!.playlistId,
+                        playlistId = shuffleEndpoint.playlistId ?: playlist.playEndpoint?.playlistId ?: "",
                         title = playlist.title,
                         items = songs.map { it.toMediaMetadata() },
                         startShuffled = true,

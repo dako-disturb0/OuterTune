@@ -129,8 +129,8 @@ class DirectoryTree(path: String, var culmSongs: CulmSongs) {
 
         // search for song in current dir
         if (path.indexOf('/') == -1) {
-            val foundSong: Song = files.first { getFileName(it.song.localPath) == getFileName(path) }
-            Log.v(TAG, "Searching for song, found?: ${foundSong.id} Name: ${foundSong.song.title}")
+            val foundSong: Song? = files.firstOrNull { getFileName(it.song.localPath) == getFileName(path) }
+            Log.v(TAG, "Searching for song, found?: ${foundSong?.id} Name: ${foundSong?.song?.title}")
             return foundSong
         }
 

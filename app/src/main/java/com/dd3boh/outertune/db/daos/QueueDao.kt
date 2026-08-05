@@ -110,12 +110,15 @@ interface QueueDao {
 
     @Transaction
     fun updateAllQueues(mqs: List<MultiQueueObject>) {
-        val mqs = mqs.toList() // please no more ConcurrentModificationException I beg you
-        mqs.forEachIndexed { index, q -> q.index = index }
-        CoroutineScope(Dispatchers.IO).launch {
-            nukeAliens(mqs.map { it.id })
-            mqs.forEach { updateQueue(it) }
+        val mqsList = mqs.toList()
+        mqsList.forEachIndexed { index, q -> q.index = index }
+        val ids = mqsList.map { it.id }
+        if (ids.isEmpty()) {
+            deleteAllQueues()
+        } else {
+            nukeAliens(ids)
         }
+        mqsList.forEach { updateQueue(it) }
     }
 
     // endregion

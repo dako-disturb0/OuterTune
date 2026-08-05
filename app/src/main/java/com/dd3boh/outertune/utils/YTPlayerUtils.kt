@@ -252,8 +252,9 @@ object YTPlayerUtils {
             val requestBuilder = okhttp3.Request.Builder()
                 .head()
                 .url(url)
-            val response = httpClient.newCall(requestBuilder.build()).execute()
-            return response.isSuccessful
+            httpClient.newCall(requestBuilder.build()).execute().use { response ->
+                return response.isSuccessful
+            }
         } catch (e: Exception) {
             reportException(e)
         }

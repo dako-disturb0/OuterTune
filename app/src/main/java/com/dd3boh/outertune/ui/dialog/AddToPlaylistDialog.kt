@@ -187,12 +187,13 @@ fun AddToPlaylistDialog(
                                 songIds = result
                             }
                         }
-                        duplicates = database.playlistDuplicates(playlist.id, songIds!!)
+                        val targetIds = songIds ?: return@launch
+                        duplicates = database.playlistDuplicates(playlist.id, targetIds)
                         if (duplicates.isNotEmpty()) {
                             showDuplicateDialog = true
                         } else {
                             onDismiss()
-                            database.addSongToPlaylist(playlist, songIds!!)
+                            database.addSongToPlaylist(playlist, targetIds)
 
                             if (!playlist.playlist.isLocal) {
                                 playlist.playlist.browseId?.let { plist ->
@@ -243,10 +244,12 @@ fun AddToPlaylistDialog(
                     onClick = {
                         showDuplicateDialog = false
                         onDismiss()
+                        val plist = selectedPlaylist ?: return@TextButton
+                        val sIds = songIds ?: return@TextButton
                         database.transaction {
                             addSongToPlaylist(
-                                selectedPlaylist!!,
-                                songIds!!.filter {
+                                plist,
+                                sIds.filter {
                                     !duplicates.contains(it)
                                 }
                             )
@@ -260,8 +263,10 @@ fun AddToPlaylistDialog(
                     onClick = {
                         showDuplicateDialog = false
                         onDismiss()
+                        val plist = selectedPlaylist ?: return@TextButton
+                        val sIds = songIds ?: return@TextButton
                         database.transaction {
-                            addSongToPlaylist(selectedPlaylist!!, songIds!!)
+                            addSongToPlaylist(plist, sIds)
                         }
                     }
                 ) {

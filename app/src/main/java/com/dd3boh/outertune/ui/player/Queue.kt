@@ -968,7 +968,7 @@ fun BoxScope.QueueContent(
                     ) {
                         fun getQueueLength(): Int {
                             return if (!detachedHead) {
-                                queueWindows.sumOf { it.mediaItem.metadata!!.duration }
+                                queueWindows.sumOf { it.mediaItem.metadata?.duration ?: 0 }
                             } else detachedQueue?.queue?.sumOf { it.duration } ?: 0
                         }
 

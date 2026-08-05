@@ -611,7 +611,7 @@ fun HomeScreen(
                         },
                         onClick = {
                             when (it.title) {
-                                is Song -> navController.navigate("album/${it.title.album!!.id}")
+                                is Song -> it.title.album?.id?.let { albumId -> navController.navigate("album/$albumId") }
                                 is Album -> navController.navigate("album/${it.title.id}")
                                 is Artist -> navController.navigate("artist/${it.title.id}")
                                 is Playlist -> {}

@@ -57,14 +57,16 @@ class LyricsMenuViewModel @Inject constructor(
     }
 
     fun refetchLyrics(mediaMetadata: MediaMetadata, onDone: (SemanticLyrics?) -> Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Delete from DB so it gets re-fetched from providers
                 database.deleteLyricById(mediaMetadata.id)
                 withTimeoutOrNull(LYRIC_FETCH_TIMEOUT) {
                     // forceRefresh=true bypasses all caches
                     val lyrics = lyricsHelper.getLyrics(mediaMetadata, forceRefresh = true)
-                    onDone(lyrics)
+                    withContext(Dispatchers.Main) {
+                        onDone(lyrics)
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e

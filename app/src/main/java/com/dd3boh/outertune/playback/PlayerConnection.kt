@@ -49,7 +49,7 @@ class PlayerConnection(
 ) : Player.Listener {
     val TAG = PlayerConnection::class.simpleName.toString()
 
-    val service = binder.getService()!!
+    val service = checkNotNull(binder.getService()) { "MusicService is not bound" }
     val queueBoard = service.queueBoard
     val player = service.player
     val scope = binder.viewModelScope

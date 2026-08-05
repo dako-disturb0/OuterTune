@@ -116,11 +116,11 @@ class DownloadUtil @Inject constructor(
                 FormatEntity(
                     id = mediaId,
                     itag = format.itag,
-                    mimeType = format.mimeType.split(";")[0],
-                    codecs = format.mimeType.split("codecs=")[1].removeSurrounding("\""),
+                    mimeType = format.mimeType.split(";").firstOrNull() ?: "",
+                    codecs = format.mimeType.split("codecs=").getOrNull(1)?.removeSurrounding("\"") ?: "",
                     bitrate = format.bitrate,
                     sampleRate = format.audioSampleRate,
-                    contentLength = format.contentLength!!,
+                    contentLength = format.contentLength ?: 0L,
                     loudnessDb = playbackData.audioConfig?.loudnessDb,
                     playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl
                 )
@@ -232,7 +232,7 @@ class DownloadUtil @Inject constructor(
         val output = ByteArrayOutputStream()
         try {
             for (span in spans) {
-                val file: File? = span.file
+                val file: File = span.file ?: continue
                 FileInputStream(file).use { fis ->
                     fis.copyTo(output)
                 }
@@ -282,9 +282,10 @@ class DownloadUtil @Inject constructor(
 
             // actual migration code
             val downloadedSongs = mutableMapOf<String, Download>()
-            val cursor = downloadManager.downloadIndex.getDownloads()
-            while (cursor.moveToNext()) {
-                downloadedSongs[cursor.download.request.id] = cursor.download
+            downloadManager.downloadIndex.getDownloads().use { cursor ->
+                while (cursor.moveToNext()) {
+                    downloadedSongs[cursor.download.request.id] = cursor.download
+                }
             }
 
             // copy all completed downloads
@@ -356,7 +357,9 @@ class DownloadUtil @Inject constructor(
         // new files
         val availableDownloads = dbDownloads.minus(missingFiles)
         availableDownloads.forEach { s ->
-            result[s.song.id] = s.song.dateDownload!! // sql should cover our butts
+            s.song.dateDownload?.let { date ->
+                result[s.song.id] = date
+            }
         }
 
         downloads.value = result

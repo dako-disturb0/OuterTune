@@ -91,11 +91,12 @@ class CoilBitmapLoader @Inject constructor(
     override suspend fun fetch(): FetchResult? {
         return try {
             if (data.path?.startsWith("/storage/") == true) {
-                val mData = MediaMetadataRetriever()
                 var image: Bitmap = try {
-                    mData.setDataSource(data.path)
-                    val art = mData.embeddedPicture
-                    BitmapFactory.decodeByteArray(art, 0, art!!.size)
+                    MediaMetadataRetriever().use { mData ->
+                        mData.setDataSource(data.path)
+                        val art = mData.embeddedPicture
+                        if (art != null) BitmapFactory.decodeByteArray(art, 0, art.size) else null
+                    }
                 } catch (e: Exception) {
                     drawPlaceholder(context)
                 } ?: drawPlaceholder(context)

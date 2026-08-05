@@ -29,7 +29,7 @@ class LocalPlaylistViewModel @Inject constructor(
     database: MusicDatabase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val playlistId = savedStateHandle.get<String>("playlistId")!!
+    val playlistId = savedStateHandle.get<String>("playlistId") ?: ""
     val playlistWithSongs = combine(
         database.playlist(playlistId),
         database.playlistSongs(playlistId),

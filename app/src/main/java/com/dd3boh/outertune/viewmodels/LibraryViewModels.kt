@@ -157,8 +157,10 @@ class LibraryFoldersViewModel @Inject constructor(
         if (query.isNotBlank()) {
             viewModelScope.launch(Dispatchers.IO) {
                 val dbSongs = database.searchSongsAllLocalInDir(dir, query).first()
-                filteredSongs.clear()
-                filteredSongs.addAll(dbSongs)
+                withContext(Dispatchers.Main) {
+                    filteredSongs.clear()
+                    filteredSongs.addAll(dbSongs)
+                }
             }
         }
     }
@@ -192,16 +194,18 @@ class LibraryArtistsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
+            val processedIds = mutableSetOf<String>()
             allArtists.collect { artists ->
                 artists
                     ?.map { it.artist }
                     ?.filter {
-                        it.thumbnailUrl == null || Duration.between(
+                        !processedIds.contains(it.id) && (it.thumbnailUrl == null || Duration.between(
                             it.lastUpdateTime,
                             LocalDateTime.now()
-                        ) > Duration.ofDays(10)
+                        ) > Duration.ofDays(10))
                     }
                     ?.forEach { artist ->
+                        processedIds.add(artist.id)
                         YouTube.artist(artist.id).onSuccess { artistPage ->
                             database.query {
                                 update(artist, artistPage)
@@ -241,11 +245,13 @@ class LibraryAlbumsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
+            val processedIds = mutableSetOf<String>()
             allAlbums.collect { albums ->
                 albums
                     ?.filter {
-                        !it.album.isLocal && it.album.songCount == 0
+                        !processedIds.contains(it.id) && !it.album.isLocal && it.album.songCount == 0
                     }?.forEach { album ->
+                        processedIds.add(album.id)
                         YouTube.album(album.id).onSuccess { albumPage ->
                             database.query {
                                 update(album.album, albumPage)
@@ -349,7 +355,7 @@ class ArtistSongsViewModel @Inject constructor(
     database: MusicDatabase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val artistId = savedStateHandle.get<String>("artistId")!!
+    private val artistId = savedStateHandle.get<String>("artistId") ?: ""
     val artist = database.artist(artistId)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 

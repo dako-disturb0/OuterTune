@@ -407,7 +407,7 @@ class QueueBoard(
                 ret = item.queue.remove(s)
                 Log.d(TAG, "Removing song: ${s.title}, $ret")
             }
-        } else {
+        } else if (index in 0 until item.queue.size) {
             item.queue.removeAt(index)
             ret = true
         }
@@ -541,7 +541,7 @@ class QueueBoard(
         if (QUEUE_DEBUG)
             Log.d(TAG, "Shuffling queue ${item.title}")
 
-        val currentSong = item.queue[item.queuePos]
+        val currentSong = item.queue.getOrNull(item.queuePos)
 
         // shuffle & push the current song to top if requested to
         shuffleInPlace(item.queue)
@@ -798,8 +798,8 @@ class QueueBoard(
                     0, playerIndex,
                     mediaItems.subList(0, queuePos).map { it.toMediaItem() })
                 player.player.replaceMediaItems(
-                    queuePos + 1, Int.MAX_VALUE,
-                    mediaItems.subList(queuePos + 1, mediaItems.size).map { it.toMediaItem() })
+                    queuePos + 1, player.player.mediaItemCount,
+                    mediaItems.subList((queuePos + 1).coerceAtMost(mediaItems.size), mediaItems.size).map { it.toMediaItem() })
             }
         } else {
             Log.d(TAG, "Seamless is not supported. Loading songs in directly")
@@ -852,22 +852,27 @@ class QueueBoard(
         }
 
         jobActive.withLock {
-            while (queueEntity.isNotEmpty() || queueSongMap.isNotEmpty()) {
-                runBlocking {
-                    delay(5000L)
-                }
+            while (synchronized(queueEntity) { queueEntity.isNotEmpty() } || synchronized(queueSongMap) { queueSongMap.isNotEmpty() }) {
+                delay(5000L)
                 Log.d(TAG, "Running database save task")
 
-                // saving songs nukes the queue entity in the process, about it shouldn't matter since are same queue object
-                if (!queueSongMap.isEmpty()) {
-                    queueSongMap.last().job.start()
+                val songJob = synchronized(queueSongMap) {
+                    val job = queueSongMap.poll()
                     queueSongMap.clear()
+                    job
+                }
+                if (songJob != null) {
+                    songJob.job.start()
                     continue
                 }
 
-                if (!queueEntity.isEmpty()) {
-                    queueEntity.last().job.start()
+                val entityJob = synchronized(queueEntity) {
+                    val job = queueEntity.poll()
                     queueEntity.clear()
+                    job
+                }
+                if (entityJob != null) {
+                    entityJob.job.start()
                     continue
                 }
             }
@@ -882,14 +887,16 @@ class QueueBoard(
 
     private fun saveQueueSongs(mq: MultiQueueObject) {
         if (player.dataStore.get(PersistentQueueKey, true)) {
-            queueSongMap.add(
-                PriorityJob(
-                    0,
-                    coroutineScope.launch(start = CoroutineStart.DEFAULT) {
-                        player.database.saveQueue(mq)
-                    }
+            synchronized(queueSongMap) {
+                queueSongMap.add(
+                    PriorityJob(
+                        0,
+                        coroutineScope.launch(start = CoroutineStart.LAZY) {
+                            player.database.saveQueue(mq)
+                        }
+                    )
                 )
-            )
+            }
             CoroutineScope(Dispatchers.IO).launch {
                 databaseDispatcher()
             }

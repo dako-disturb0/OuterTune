@@ -67,19 +67,19 @@ fun youtubeNavigator(
                 coroutineScope.launch {
                     YouTube.albumSongs(playlistId).onSuccess { songs ->
                         songs.firstOrNull()?.album?.id?.let { browseId ->
-                            navController.navigate("album/$browseId")
+                            navController.navigate("album/${Uri.encode(browseId)}")
                         }
                     }.onFailure {
                         reportException(it)
                     }
                 }
             } else {
-                navController.navigate("online_playlist/$playlistId")
+                navController.navigate("online_playlist/${Uri.encode(playlistId)}")
             }
         }
 
         "channel", "c" -> uri.lastPathSegment?.let { artistId ->
-            navController.navigate("artist/$artistId")
+            navController.navigate("artist/${Uri.encode(artistId)}")
         }
 
         else -> when {
@@ -229,8 +229,9 @@ suspend fun scanInit(
             playerConnection?.service?.initQueue()
             Log.i(MAIN_TAG, "Local media and downloads scan completed")
         } else if (perms == PackageManager.PERMISSION_DENIED) {
-            // Request the permission using the permission launcher
-            (context as MainActivity).permissionLauncher.launch(MEDIA_PERMISSION_LEVEL)
+            withContext(Dispatchers.Main) {
+                (context as? MainActivity)?.permissionLauncher?.launch(MEDIA_PERMISSION_LEVEL)
+            }
             Log.w(MAIN_TAG, "Not enough permission to perform local media scan")
         }
     } else if (localLibEnable) {

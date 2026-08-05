@@ -20,7 +20,7 @@ class AlbumViewModel @Inject constructor(
     database: MusicDatabase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val albumId = savedStateHandle.get<String>("albumId")!!
+    val albumId = savedStateHandle.get<String>("albumId") ?: ""
     val albumWithSongs = database.albumWithSongs(albumId)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val otherVersions = MutableStateFlow<List<AlbumItem>>(emptyList())

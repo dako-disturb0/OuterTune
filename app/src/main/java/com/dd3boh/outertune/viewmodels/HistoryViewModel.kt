@@ -61,8 +61,10 @@ class HistoryViewModel @Inject constructor(
     
     fun fetchRemoteHistory() {
         viewModelScope.launch(Dispatchers.IO) {
-            YouTube.musicHistory().onSuccess {
-                historyPage.value = it
+            YouTube.musicHistory().onSuccess { result ->
+                withContext(Dispatchers.Main) {
+                    historyPage.value = result
+                }
             }.onFailure {
                 reportException(it)
             }
