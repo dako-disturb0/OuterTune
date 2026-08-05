@@ -32,6 +32,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -44,6 +45,7 @@ import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
@@ -54,6 +56,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -94,6 +97,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -185,6 +189,7 @@ import com.dd3boh.outertune.ui.screens.settings.StorageSettings
 import com.dd3boh.outertune.ui.theme.OuterTuneTheme
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
 import com.dd3boh.outertune.utils.ActivityLauncherHelper
+import com.dd3boh.outertune.ui.utils.expressiveScaleOnPress
 import com.dd3boh.outertune.utils.NetworkConnectivityObserver
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.lmScannerCoroutine
@@ -767,11 +772,16 @@ class MainActivity : ComponentActivity() {
                                     animationSpec = NavigationBarAnimationSpec,
                                     label = ""
                                 )
-
-                                NavigationBar(
+                                androidx.compose.material3.Surface(
+                                    shape = RoundedCornerShape(32.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shadowElevation = 10.dp,
+                                    tonalElevation = 8.dp,
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
-                                        .height(bottomInset + getNavPadding())
+                                        .padding(start = 12.dp, end = 12.dp, bottom = 8.dp)
+                                        .fillMaxWidth()
+                                        .height(bottomInset + getNavPadding() - 4.dp)
                                         .offset {
                                             if (navigationBarHeight == 0.dp) {
                                                 IntOffset(
@@ -791,58 +801,60 @@ class MainActivity : ComponentActivity() {
                                                     y = (slideOffset + hideOffset).roundToPx()
                                                 )
                                             }
-                                        },
-                                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp)
+                                        }
                                 ) {
-                                    navigationItems.fastForEach { screen ->
-                                        // TODO: display selection when based on root page user entered
-//                                        val isSelected = navBackStackEntry?.destination?.hierarchy?.any {
-//                                            it.route?.substringBefore("?")?.substringBefore("/") == screen.route
-//                                        } == true
-                                        NavigationBarItem(
-                                            selected = navBackStackEntry?.destination?.hierarchy?.any { it.route == screen.route } == true,
-                                            icon = {
-                                                Icon(
-                                                    screen.icon,
-                                                    contentDescription = null
-                                                )
-                                            },
-                                            label = {
-                                                if (!slimNav) {
-                                                    Text(
-                                                        text = stringResource(screen.titleId),
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
+                                    NavigationBar(
+                                        containerColor = Color.Transparent
+                                    ) {
+                                        navigationItems.fastForEach { screen ->
+                                            val isSelected = navBackStackEntry?.destination?.hierarchy?.any { it.route == screen.route } == true
+                                            val itemInteractionSource = remember { MutableInteractionSource() }
+                                            NavigationBarItem(
+                                                selected = isSelected,
+                                                interactionSource = itemInteractionSource,
+                                                modifier = Modifier.expressiveScaleOnPress(itemInteractionSource),
+                                                icon = {
+                                                    Icon(
+                                                        screen.icon,
+                                                        contentDescription = null
                                                     )
-                                                }
-                                            },
-                                            onClick = {
-                                                if (playerBottomSheetState.isExpanded) {
-                                                    playerBottomSheetState.collapseSoft()
-                                                }
-
-                                                if (navBackStackEntry?.destination?.hierarchy?.any { it.route == screen.route } == true) {
-                                                    navBackStackEntry?.savedStateHandle?.set(
-                                                        "scrollToTop",
-                                                        true
-                                                    )
-                                                } else if (navigationItems.none { scr -> navBackStackEntry?.destination?.hierarchy?.any { it.route == scr.route } == true }) {
-                                                    // this eye bleach allows you to navigate back when you tap on the navbar on a non-root page
-                                                    // TODO: nav3 allows us to access back stack... maybe do indicators properly and remove this hack
-                                                    navController.navigateUp()
-                                                } else {
-                                                    navController.navigate(screen.route) {
-                                                        popUpTo(navController.graph.startDestinationId) {
-                                                            saveState = true
-                                                        }
-                                                        launchSingleTop = true
-                                                        restoreState = true
+                                                },
+                                                label = {
+                                                    if (!slimNav) {
+                                                        Text(
+                                                            text = stringResource(screen.titleId),
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
                                                     }
-                                                }
+                                                },
+                                                onClick = {
+                                                    if (playerBottomSheetState.isExpanded) {
+                                                        playerBottomSheetState.collapseSoft()
+                                                    }
 
-                                                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                                            }
-                                        )
+                                                    if (navBackStackEntry?.destination?.hierarchy?.any { it.route == screen.route } == true) {
+                                                        navBackStackEntry?.savedStateHandle?.set(
+                                                            "scrollToTop",
+                                                            true
+                                                        )
+                                                    } else if (navigationItems.none { scr -> navBackStackEntry?.destination?.hierarchy?.any { it.route == scr.route } == true }) {
+                                                        navController.navigateUp()
+                                                    } else {
+                                                        navController.navigate(screen.route) {
+                                                            popUpTo(navController.graph.startDestinationId) {
+                                                                saveState = true
+                                                            }
+                                                            launchSingleTop = true
+                                                            restoreState = true
+                                                        }
+                                                    }
+
+                                                    haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }

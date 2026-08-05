@@ -199,7 +199,7 @@ fun SearchBar(
 
         Surface(
             shape = animatedShape,
-            color = if (animationProgress > 0) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
+            color = if (animationProgress > 0) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = contentColorFor(colors.containerColor),
             tonalElevation = tonalElevation,
             modifier = Modifier

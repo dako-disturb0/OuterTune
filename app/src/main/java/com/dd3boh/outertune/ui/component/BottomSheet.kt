@@ -117,8 +117,8 @@ fun BottomSheet(
             }
             .clip(
                 RoundedCornerShape(
-                    topStart = if (!state.isExpanded) 16.dp else 0.dp,
-                    topEnd = if (!state.isExpanded) 16.dp else 0.dp
+                    topStart = if (!state.isExpanded) 28.dp else 0.dp,
+                    topEnd = if (!state.isExpanded) 28.dp else 0.dp
                 )
             )
     ) {

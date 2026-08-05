@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import com.dd3boh.outertune.ui.utils.expressiveScaleOnPress
 
 @Composable
 fun ResizableIconButton(
@@ -44,14 +45,16 @@ fun ResizableIconButton(
     indication: Indication? = null,
     onClick: () -> Unit = {},
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Image(
         painter = painterResource(icon),
         contentDescription = null,
         colorFilter = ColorFilter.tint(color),
         modifier = Modifier
+            .expressiveScaleOnPress(interactionSource, pressedScale = 0.88f)
             .clickable(
                 indication = indication ?: ripple(bounded = false),
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 enabled = enabled,
                 onClick = onClick
             )
@@ -69,14 +72,16 @@ fun ResizableIconButton(
     indication: Indication? = null,
     onClick: () -> Unit = {},
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Image(
         imageVector = icon,
         contentDescription = null,
         colorFilter = ColorFilter.tint(color),
         modifier = Modifier
+            .expressiveScaleOnPress(interactionSource, pressedScale = 0.88f)
             .clickable(
                 indication = indication ?: ripple(bounded = false),
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 enabled = enabled,
                 onClick = onClick
             )

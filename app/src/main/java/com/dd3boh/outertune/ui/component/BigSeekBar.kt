@@ -31,7 +31,7 @@ fun BigSeekBar(
     progressProvider: () -> Float,
     onProgressChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
-    background: Color = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.13f),
+    background: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
     color: Color = MaterialTheme.colorScheme.primary,
 ) {
     var width by remember {
@@ -42,7 +42,7 @@ fun BigSeekBar(
         modifier
             .fillMaxWidth()
             .height(48.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(24.dp))
             .onPlaced {
                 width = it.size.width.toFloat()
             }
@@ -52,11 +52,18 @@ fun BigSeekBar(
                 }
             }
     ) {
-        drawRect(color = background)
-
-        drawRect(
-            color = color,
-            size = size.copy(width = size.width * progressProvider())
+        drawRoundRect(
+            color = background,
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2)
         )
+
+        val progressWidth = size.width * progressProvider()
+        if (progressWidth > 0f) {
+            drawRoundRect(
+                color = color,
+                size = size.copy(width = progressWidth),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2)
+            )
+        }
     }
 }

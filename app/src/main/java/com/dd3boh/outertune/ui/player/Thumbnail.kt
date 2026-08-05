@@ -49,6 +49,7 @@ import com.dd3boh.outertune.constants.PlayerThumbnailSizeKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.Lyrics
+import com.dd3boh.outertune.ui.utils.expressiveClickable
 import com.dd3boh.outertune.ui.utils.highRes
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
@@ -126,10 +127,9 @@ fun Thumbnail(
                             .fillMaxSize(thumbnailSize.coerceIn(0.1f, 1.0f))
                             .aspectRatio(1f)
                             .clip(shape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
+                            .expressiveClickable(
                                 enabled = showLyricsOnClick,
+                                pressedScale = 0.95f,
                             ) {
                                 showLyrics = !showLyrics
                                 haptic.performHapticFeedback(HapticFeedbackType.Confirm)

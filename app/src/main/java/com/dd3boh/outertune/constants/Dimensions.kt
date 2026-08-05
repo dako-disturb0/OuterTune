@@ -35,9 +35,9 @@ val ListThumbnailSize = 48.dp
 val GridThumbnailHeight = 96.dp
 val AlbumThumbnailSize = 144.dp
 
-val ThumbnailCornerRadius = 6.dp
-val AlbumCornerRadius = 16.dp
-val MenuCornerRadius = 16.dp
+val ThumbnailCornerRadius = 12.dp
+val AlbumCornerRadius = 28.dp
+val MenuCornerRadius = 24.dp
 val DialogCornerRadius = 32.dp
 
 val PlayerHorizontalPadding = 32.dp

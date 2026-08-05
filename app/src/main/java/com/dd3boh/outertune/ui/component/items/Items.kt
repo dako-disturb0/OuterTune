@@ -93,6 +93,7 @@ import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.PlayingIndicator
 import com.dd3boh.outertune.ui.component.PlayingIndicatorBox
+import com.dd3boh.outertune.ui.utils.expressiveClickable
 import com.dd3boh.outertune.utils.LocalArtworkPath
 import com.dd3boh.outertune.utils.getDownloadState
 import com.dd3boh.outertune.utils.joinByBullet
@@ -130,23 +131,24 @@ inline fun ListItem(
         modifier = if (isActive) {
             modifier // playing highlight
                 .height(ListItemHeight)
-                .padding(horizontal = 8.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .padding(horizontal = 8.dp, vertical = 2.dp)
+                .clip(RoundedCornerShape(20.dp))
                 .background(
                     color = // selected active
-                        if (isSelected == true) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                        else MaterialTheme.colorScheme.secondaryContainer
+                        if (isSelected == true) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                        else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
                 )
         } else if (isSelected == true) {
             modifier // inactive selected
                 .height(ListItemHeight)
-                .padding(horizontal = 8.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(color = MaterialTheme.colorScheme.inversePrimary.copy(alpha = 0.4f))
+                .padding(horizontal = 8.dp, vertical = 2.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
         } else {
             modifier // default
                 .height(ListItemHeight)
                 .padding(horizontal = 8.dp)
+                .clip(RoundedCornerShape(20.dp))
         }
     ) {
         Box(
@@ -585,10 +587,10 @@ fun YouTubeCardItem(
         modifier = modifier
             .height(60.dp)
             .width((screenWidthDp.dp - 12.dp) / 2)
-            .padding(6.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp))
-            .clickable(onClick = onClick)
+            .padding(4.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .expressiveClickable(pressedScale = 0.94f) { onClick() }
     ) {
         Box(
             contentAlignment = Alignment.Center

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
@@ -106,74 +107,93 @@ fun MiniPlayer(
     }
 
 
-    Box(
+    androidx.compose.material3.Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 8.dp,
+        tonalElevation = 6.dp,
         modifier = modifier
+            .padding(horizontal = 10.dp, vertical = 4.dp)
             .fillMaxWidth()
-            .height(MiniPlayerHeight)
+            .height(MiniPlayerHeight - 8.dp)
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
-//            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp))
     ) {
-        LinearProgressIndicator(
-            progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
-            drawStopIndicator = { },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(2.dp)
-                .align(Alignment.BottomCenter),
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier
-
-                .fillMaxSize(),
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            val iconButtonColor = MaterialTheme.colorScheme.onSecondaryContainer
-            Box(Modifier.weight(1f)) {
-                mediaMetadata?.let {
-                    MiniMediaInfo(
-                        mediaMetadata = it,
-                        error = error,
-                        modifier = Modifier.padding(horizontal = 6.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 6.dp),
+            ) {
+                val iconButtonColor = MaterialTheme.colorScheme.onSurface
+                Box(Modifier.weight(1f)) {
+                    mediaMetadata?.let {
+                        MiniMediaInfo(
+                            mediaMetadata = it,
+                            error = error,
+                            modifier = Modifier.padding(horizontal = 6.dp)
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = {
+                        if (playerConnection.player.currentMediaItem == null) {
+                            queueBoard.setCurrQueue()
+                            playerConnection.player.togglePlayPause()
+                        } else if (playbackState == Player.STATE_ENDED) {
+                            playerConnection.player.seekTo(0, 0)
+                            playerConnection.player.playWhenReady = true
+                        } else {
+                            playerConnection.player.togglePlayPause()
+                        }
+                    }
+                ) {
+                    androidx.compose.material3.Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (playbackState == Player.STATE_ENDED) Icons.Rounded.Replay else if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            contentDescription = null,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+
+                IconButton(
+                    enabled = canSkipNext,
+                    onClick = {
+                        if (playerConnection.player.currentMediaItem == null) {
+                            queueBoard.setCurrQueue()
+                            playerConnection.player.playWhenReady = true
+                        }
+                        playerConnection.player.seekToNext()
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.skip_next),
+                        tint = iconButtonColor.copy(alpha = (if (canSkipNext) 1f else 0.4f)),
+                        contentDescription = null
                     )
                 }
             }
 
-            IconButton(
-                onClick = {
-                    if (playerConnection.player.currentMediaItem == null) {
-                        queueBoard.setCurrQueue()
-                        playerConnection.player.togglePlayPause()
-                    } else if (playbackState == Player.STATE_ENDED) {
-                        playerConnection.player.seekTo(0, 0)
-                        playerConnection.player.playWhenReady = true
-                    } else {
-                        playerConnection.player.togglePlayPause()
-                    }
-                }
-            ) {
-                Icon(
-                    imageVector = if (playbackState == Player.STATE_ENDED) Icons.Rounded.Replay else if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    tint = iconButtonColor,
-                    contentDescription = null
-                )
-            }
-
-            IconButton(
-                enabled = canSkipNext,
-                onClick = {
-                    if (playerConnection.player.currentMediaItem == null) {
-                        queueBoard.setCurrQueue()
-                        playerConnection.player.playWhenReady = true
-                    }
-                    playerConnection.player.seekToNext()
-                }
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.skip_next),
-                    tint = iconButtonColor.copy(alpha = (if (canSkipNext) 1f else 0.5f)),
-                    contentDescription = null
-                )
-            }
+            LinearProgressIndicator(
+                progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
+                drawStopIndicator = { },
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = Color.Transparent,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                    .align(Alignment.BottomCenter),
+            )
         }
     }
 }
