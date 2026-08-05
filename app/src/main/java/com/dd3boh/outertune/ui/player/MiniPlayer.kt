@@ -131,7 +131,7 @@ fun MiniPlayer(
         shadowElevation = 8.dp,
         tonalElevation = 6.dp,
         modifier = modifier
-            .padding(horizontal = 10.dp, vertical = 4.dp)
+            .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 4.dp)
             .fillMaxWidth()
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
     ) {

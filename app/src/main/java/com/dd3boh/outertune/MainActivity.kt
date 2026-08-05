@@ -382,10 +382,11 @@ class MainActivity : ComponentActivity() {
                     fun getNavPadding(): Dp {
                         return if (!useNavRail) (if (slimNav) 52.dp else 68.dp) else MinMiniPlayerHeight
                     }
+                    val miniPlayerGap = 10.dp
 
                     val playerBottomSheetState = rememberBottomSheetState(
                         dismissedBound = 0.dp,
-                        collapsedBound = bottomInset + MiniPlayerHeight + getNavPadding(),
+                        collapsedBound = bottomInset + MiniPlayerHeight + getNavPadding() + miniPlayerGap,
                         expandedBound = maxHeight,
                     )
 
@@ -397,7 +398,7 @@ class MainActivity : ComponentActivity() {
                             // TODO: Navbar is shown in all screens except for oobe (which doesn't use these insets). Idk what do to tbh
                             var bottom = bottomInset + if (!useNavRail) NavigationBarHeight else 0.dp
 
-                            if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight
+                            if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight + miniPlayerGap
                             if (!tabMode) {
                                 windowsInsets
                                     .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
