@@ -5,7 +5,9 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.ClearAll
 import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.NoCell
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.Icon
@@ -24,6 +26,7 @@ import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
 import com.dd3boh.outertune.constants.AutoLoadMoreKey
 import com.dd3boh.outertune.constants.KeepAliveKey
+import com.dd3boh.outertune.constants.PlayerEdgeToEdgeModeKey
 import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
 import com.dd3boh.outertune.constants.SkipOnErrorKey
@@ -31,6 +34,7 @@ import com.dd3boh.outertune.constants.SkipSilenceKey
 import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
 import com.dd3boh.outertune.constants.minPlaybackDurKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
+import com.dd3boh.outertune.ui.component.ListPreference
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.dialog.CounterDialog
@@ -45,6 +49,11 @@ fun PlayerGeneralFrag() {
     val (seekIncrement, onSeekIncrementChange) = rememberEnumPreference(
         key = SeekIncrementKey,
         defaultValue = SeekIncrement.OFF
+    )
+
+    val (edgeToEdgeMode, onEdgeToEdgeModeChange) = rememberPreference(
+        key = PlayerEdgeToEdgeModeKey,
+        defaultValue = "spacing"
     )
 
     SwitchPreference(
@@ -62,6 +71,19 @@ fun PlayerGeneralFrag() {
         valueText = {
             seekIncrement -> SeekIncrement.getString(context, seekIncrement)
         }
+    )
+    ListPreference(
+        title = { Text(stringResource(R.string.player_edge_to_edge_title)) },
+        icon = { Icon(Icons.Rounded.Fullscreen, null) },
+        selectedValue = edgeToEdgeMode,
+        values = listOf("spacing", "hide_navbar"),
+        valueText = { mode ->
+            when (mode) {
+                "hide_navbar" -> stringResource(R.string.player_edge_to_edge_hide_navbar)
+                else          -> stringResource(R.string.player_edge_to_edge_spacing)
+            }
+        },
+        onValueSelected = onEdgeToEdgeModeChange
     )
 }
 

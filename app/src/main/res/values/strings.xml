@@ -200,6 +200,9 @@ We recycle translations from upstream, they are pulled periodically. -->
     <string name="lyrics_not_found">Lyrics not found</string>
     <string name="lyrics_in_miniplayer_title">Show lyrics in miniplayer</string>
     <string name="lyrics_in_miniplayer_description">Display live synced lyric lines in the miniplayer bar</string>
+    <string name="miniplayer_lyric_mode_title">Lyric display mode</string>
+    <string name="miniplayer_lyric_mode_static">Static (3-line reserved height)</string>
+    <string name="miniplayer_lyric_mode_dynamic">Dynamic (auto-expand for long lines)</string>
     <string name="preload_karaoke_lyrics_title">Pramuat Lirik (Cepat, Tapi Memakan Ekstra Kuota)</string>
     <string name="preload_karaoke_lyrics_description">Muat lirik biasa secara instan lalu tingkatkan ke lirik karaoke di latar belakang</string>
     <string name="sleep_timer">Sleep timer</string>
@@ -289,6 +292,9 @@ We recycle translations from upstream, they are pulled periodically. -->
     <string name="auto_skip_next_on_error_desc">Ensure your continuous playback experience</string>
     <string name="stop_music_on_task_clear">Stop music on task clear</string>
     <string name="equalizer">Equalizer</string>
+    <string name="player_edge_to_edge_title">Full-screen edge-to-edge mode</string>
+    <string name="player_edge_to_edge_spacing">Spacing (keep system bars visible)</string>
+    <string name="player_edge_to_edge_hide_navbar">Hide navbar (swipe to reveal)</string>
 
     <string name="storage">Storage</string>
     <string name="cache">Cache</string>

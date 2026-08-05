@@ -18,6 +18,7 @@ val PlayerThumbnailSizeKey = floatPreferencesKey("playerThumbnailSize")
 val PlayerThumbnailRoundnessKey = intPreferencesKey("playerThumbnailRoundness")
 val PlayerThumbnailCropKey = stringPreferencesKey("playerThumbnailCrop")
 val PlayerCustomColorPaletteKey = stringPreferencesKey("playerCustomColorPalette")
+val PlayerEdgeToEdgeModeKey = stringPreferencesKey("playerEdgeToEdgeMode") // "spacing" | "hide_navbar"
 val DarkModeKey = stringPreferencesKey("darkMode")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
 val ShowLikedAndDownloadedPlaylist = booleanPreferencesKey("showLikedAndDownloadedPlaylist")
@@ -88,6 +89,7 @@ val minPlaybackDurKey = intPreferencesKey("minPlaybackDur")
  */
 val ShowLyricsKey = booleanPreferencesKey("showLyrics")
 val ShowLyricInMiniPlayerKey = booleanPreferencesKey("showLyricInMiniPlayer")
+val MiniPlayerLyricModeKey = stringPreferencesKey("miniPlayerLyricMode") // "dynamic" | "static"
 val PreloadKaraokeLyricsKey = booleanPreferencesKey("preloadKaraokeLyrics")
 val LyricsTextPositionKey = stringPreferencesKey("lyricsTextPosition")
 val MultilineLrcKey = booleanPreferencesKey("multilineLrc")

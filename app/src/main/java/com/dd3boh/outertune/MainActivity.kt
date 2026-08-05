@@ -130,6 +130,7 @@ import com.dd3boh.outertune.constants.NavigationBarAnimationSpec
 import com.dd3boh.outertune.constants.NavigationBarHeight
 import com.dd3boh.outertune.constants.OOBE_VERSION
 import com.dd3boh.outertune.constants.OobeStatusKey
+import com.dd3boh.outertune.constants.PlayerEdgeToEdgeModeKey
 import com.dd3boh.outertune.constants.PureBlackKey
 import com.dd3boh.outertune.constants.SlimNavBarKey
 import com.dd3boh.outertune.db.MusicDatabase
@@ -415,6 +416,22 @@ class MainActivity : ComponentActivity() {
                                     (playerBottomSheetState.isCollapsed || playerBottomSheetState.isDismissed)
                         }
                     )
+
+                    // ── Edge-to-edge: hide nav bar when player is fullscreen ──────
+                    val playerEdgeToEdgeMode by rememberPreference(
+                        PlayerEdgeToEdgeModeKey,
+                        defaultValue = "spacing"
+                    )
+                    LaunchedEffect(playerBottomSheetState.isExpanded, playerEdgeToEdgeMode) {
+                        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                        if (playerEdgeToEdgeMode == "hide_navbar" && playerBottomSheetState.isExpanded) {
+                            insetsController.hide(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+                            insetsController.systemBarsBehavior =
+                                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        } else {
+                            insetsController.show(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+                        }
+                    }
 
 
                     DisposableEffect(Unit) {
