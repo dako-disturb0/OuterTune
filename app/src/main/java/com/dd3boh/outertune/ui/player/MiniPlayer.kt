@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2024 z-huang/InnerTune
- * Copyright (C) 2025 O﻿ute﻿rTu﻿ne Project
+ * Copyright (C) 2025 OuterTune Project
  *
  * SPDX-License-Identifier: GPL-3.0
  *
@@ -10,8 +10,13 @@
 package com.dd3boh.outertune.ui.player
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -33,6 +38,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -66,12 +72,15 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.constants.MiniPlayerHeight
+import com.dd3boh.outertune.constants.ShowLyricInMiniPlayerKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.button.IconButton
+import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import org.akanework.gramophone.logic.utils.SemanticLyrics
 import kotlin.math.roundToInt
 
 @Composable
@@ -87,6 +96,8 @@ fun MiniPlayer(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
+    val showLyricInMiniPlayer by rememberPreference(ShowLyricInMiniPlayerKey, defaultValue = true)
+    val lyricsModel by playerConnection.currentLyrics.collectAsState()
 
     var position by rememberSaveable(playbackState) {
         mutableLongStateOf(playerConnection.player.currentPosition)
@@ -95,17 +106,15 @@ fun MiniPlayer(
         mutableLongStateOf(playerConnection.player.duration)
     }
 
-
-    LaunchedEffect(playbackState) {
+    LaunchedEffect(playbackState, isPlaying) {
         if (playbackState == STATE_READY) {
             while (isActive) {
-                delay(500)
+                delay(300)
                 position = playerConnection.player.currentPosition
                 duration = playerConnection.player.duration
             }
         }
     }
-
 
     androidx.compose.material3.Surface(
         shape = RoundedCornerShape(24.dp),
@@ -133,6 +142,9 @@ fun MiniPlayer(
                         MiniMediaInfo(
                             mediaMetadata = it,
                             error = error,
+                            lyricsModel = lyricsModel,
+                            currentPosition = position,
+                            showLyricInMiniPlayer = showLyricInMiniPlayer,
                             modifier = Modifier.padding(horizontal = 6.dp)
                         )
                     }
@@ -203,6 +215,9 @@ fun MiniPlayer(
 fun MiniMediaInfo(
     mediaMetadata: MediaMetadata,
     error: PlaybackException?,
+    lyricsModel: SemanticLyrics? = null,
+    currentPosition: Long = 0L,
+    showLyricInMiniPlayer: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
@@ -211,6 +226,21 @@ fun MiniMediaInfo(
         ?: remember { mutableStateOf(false) }
 
     val px = (ListThumbnailSize.value * density.density).roundToInt()
+
+    val currentLyricText = remember(lyricsModel, currentPosition) {
+        if (lyricsModel is SemanticLyrics.SyncedLyrics && lyricsModel.text.isNotEmpty()) {
+            val lines = lyricsModel.text
+            var idx = -1
+            for (i in lines.indices) {
+                if (lines[i].start <= currentPosition.toULong()) {
+                    idx = i
+                } else break
+            }
+            if (idx >= 0 && idx < lines.size) {
+                lines[idx].text.trim().takeIf { it.isNotBlank() }
+            } else null
+        } else null
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -275,13 +305,45 @@ fun MiniMediaInfo(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = mediaMetadata.artists.joinToString { it.name },
-                color = MaterialTheme.colorScheme.secondary,
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            AnimatedContent(
+                targetState = currentLyricText,
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(220)) + slideInVertically { height -> height / 2 })
+                        .togetherWith(fadeOut(animationSpec = tween(180)) + slideOutVertically { height -> -height / 2 })
+                },
+                label = "MiniPlayerLyricAnimation"
+            ) { targetLyric ->
+                if (showLyricInMiniPlayer && !targetLyric.isNullOrBlank()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Subtitles,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(13.dp)
+                                .padding(end = 3.dp)
+                        )
+                        Text(
+                            text = targetLyric,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = mediaMetadata.artists.joinToString { it.name },
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }

@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -63,9 +64,18 @@ class PlayerConnection(
     val currentSong = mediaMetadata.flatMapLatest {
         database.song(it?.id)
     }
-    val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
+    val currentLyrics: StateFlow<SemanticLyrics?> = mediaMetadata.flatMapLatest { mediaMetadata ->
         if (mediaMetadata != null) {
-            flowOf(service.lyricsHelper.getLyrics(mediaMetadata) ?: uninitializedLyric)
+            flow<SemanticLyrics?> {
+                val res = service.lyricsHelper.getLyrics(mediaMetadata) { intermediate ->
+                    emit(intermediate)
+                }
+                if (res != null) {
+                    emit(res)
+                } else {
+                    emit(uninitializedLyric)
+                }
+            }
         } else {
             flowOf(uninitializedLyric)
         }

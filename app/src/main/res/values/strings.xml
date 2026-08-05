@@ -198,6 +198,10 @@ We recycle translations from upstream, they are pulled periodically. -->
 
     <!-- Player -->
     <string name="lyrics_not_found">Lyrics not found</string>
+    <string name="lyrics_in_miniplayer_title">Show lyrics in miniplayer</string>
+    <string name="lyrics_in_miniplayer_description">Display live synced lyric lines in the miniplayer bar</string>
+    <string name="preload_karaoke_lyrics_title">Pramuat Lirik (Cepat, Tapi Memakan Ekstra Kuota)</string>
+    <string name="preload_karaoke_lyrics_description">Muat lirik biasa secara instan lalu tingkatkan ke lirik karaoke di latar belakang</string>
     <string name="sleep_timer">Sleep timer</string>
     <string name="end_of_song">End of song</string>
     <plurals name="minute">

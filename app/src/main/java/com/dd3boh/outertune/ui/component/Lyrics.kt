@@ -14,14 +14,17 @@ import android.content.res.Configuration
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -266,6 +269,40 @@ fun Lyrics(
         lyricsModel != null && lyricsModel != uninitializedLyric && lines.fastAny { it.words != null && it.words.isNotEmpty() }
     }
 
+    val initialGapWindow = remember(lines, isSynced) {
+        if (!isSynced || lines.isEmpty()) null
+        else {
+            val firstStart = lines.firstOrNull { it.text.isNotBlank() }?.start?.toLong() ?: 0L
+            if (firstStart > 3000L) Pair(0L, (firstStart - 650L).coerceAtLeast(0L)) else null
+        }
+    }
+
+    val gapWindows = remember(lines, isSynced) {
+        if (!isSynced || lines.isEmpty()) emptyMap()
+        else {
+            buildMap {
+                lines.forEachIndexed { index, line ->
+                    if (line.text.isBlank()) return@forEachIndexed
+                    val startMs = line.start.toLong()
+                    val nextStartMs = if (index < lines.size - 1) {
+                        lines.drop(index + 1).firstOrNull { it.text.isNotBlank() }?.start?.toLong() ?: (startMs + 10000L)
+                    } else startMs + 10000L
+
+                    val lineEndMs = if (!line.words.isNullOrEmpty()) {
+                        line.words.maxOf { it.timeRange.last.toLong() }
+                    } else {
+                        (line.end.toLong().takeIf { it > startMs } ?: (startMs + 2000L))
+                    }
+
+                    val gap = nextStartMs - lineEndMs
+                    if (gap > 2500L) {
+                        put(index, Pair(lineEndMs, (nextStartMs - 650L).coerceAtLeast(lineEndMs)))
+                    }
+                }
+            }
+        }
+    }
+
     BoxWithConstraints(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -352,6 +389,19 @@ fun Lyrics(
                     }
                 }
             } else if (lyricsModel != uninitializedLyric) {
+                if (isSynced && initialGapWindow != null) {
+                    item(key = "initial_loader") {
+                        val isVisible = currentPos in initialGapWindow.first until initialGapWindow.second
+                        LyricsIntervalIndicator(
+                            gapStartMs = initialGapWindow.first,
+                            gapEndMs = initialGapWindow.second,
+                            currentPositionMs = currentPos,
+                            visible = isVisible,
+                            color = prevTextColor,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
                 val maxW = maxWidth - 48.dp
                 itemsIndexed(
                     items = lines
@@ -456,6 +506,19 @@ fun Lyrics(
                                         0.5f
                                     }
                                 )
+                            )
+                        }
+
+                        val gapWindow = gapWindows[index]
+                        if (isSynced && gapWindow != null) {
+                            val isGapVisible = currentPos >= gapWindow.first && currentPos <= gapWindow.second
+                            LyricsIntervalIndicator(
+                                gapStartMs = gapWindow.first,
+                                gapEndMs = gapWindow.second,
+                                currentPositionMs = currentPos,
+                                visible = isGapVisible,
+                                color = prevTextColor,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
@@ -669,3 +732,70 @@ fun calculateLineProgress(line: LyricLine, currentPositionMs: Long): Float {
 
 const val animateScrollDuration = 300L
 val LyricsPreviewTime = 7.seconds
+
+@Composable
+fun LyricsIntervalIndicator(
+    gapStartMs: Long,
+    gapEndMs: Long,
+    currentPositionMs: Long,
+    visible: Boolean,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    val alpha = remember { androidx.compose.animation.core.Animatable(0f) }
+    val rowHeightFraction = remember { androidx.compose.animation.core.Animatable(0f) }
+
+    LaunchedEffect(visible) {
+        if (visible) {
+            rowHeightFraction.animateTo(1f, tween(250))
+            alpha.animateTo(1f, tween(250))
+        } else {
+            alpha.animateTo(0f, tween(200))
+            rowHeightFraction.animateTo(0f, tween(200))
+        }
+    }
+
+    val progress = if (gapEndMs > gapStartMs) {
+        ((currentPositionMs - gapStartMs).toFloat() / (gapEndMs - gapStartMs).toFloat())
+            .coerceIn(0f, 1f)
+    } else 0f
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 150, easing = LinearEasing),
+        label = "lyricsIntervalProgress"
+    )
+
+    if (rowHeightFraction.value > 0.01f) {
+        Box(
+            modifier = modifier
+                .then(Modifier.padding(vertical = 6.dp * rowHeightFraction.value))
+                .graphicsLayer {
+                    this.alpha = alpha.value
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Pin Timeline Style: 3 animated capsule/pill dots
+                repeat(3) { index ->
+                    val stepStart = index * 0.33f
+                    val dotProgress = ((animatedProgress - stepStart) / 0.33f).coerceIn(0f, 1f)
+
+                    val activeWidth = 8.dp + (14.dp * dotProgress)
+                    val activeAlpha = 0.35f + (0.65f * dotProgress)
+
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 2.dp)
+                            .size(width = activeWidth, height = 8.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(color.copy(alpha = activeAlpha))
+                    )
+                }
+            }
+        }
+    }
+}

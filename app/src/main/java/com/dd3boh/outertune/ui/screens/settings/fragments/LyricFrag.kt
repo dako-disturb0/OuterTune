@@ -99,10 +99,22 @@ fun ColumnScope.LyricFormatFrag() {
         defaultValue = LyricsPosition.CENTER
     )
     val (lyricFontSize, onLyricFontSizeChange) = rememberPreference(LyricFontSizeKey, defaultValue = 20)
+    val (showLyricInMiniPlayer, onShowLyricInMiniPlayerChange) = rememberPreference(
+        com.dd3boh.outertune.constants.ShowLyricInMiniPlayerKey,
+        defaultValue = true
+    )
 
     var showFontSizeDialog by remember {
         mutableStateOf(false)
     }
+
+    SwitchPreference(
+        title = { Text(stringResource(R.string.lyrics_in_miniplayer_title)) },
+        description = stringResource(R.string.lyrics_in_miniplayer_description),
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = showLyricInMiniPlayer,
+        onCheckedChange = onShowLyricInMiniPlayerChange
+    )
 
     EnumListPreference(
         title = { Text(stringResource(R.string.lyrics_text_position)) },
@@ -562,6 +574,10 @@ fun ColumnScope.LyricAdvancedFrag() {
     val (lyricUpdateSpeed, onLyricsUpdateSpeedChange) = rememberEnumPreference(LyricUpdateSpeed, Speed.MEDIUM)
     val (lyricsFancy, onLyricsFancyChange) = rememberPreference(LyricKaraokeEnable, false)
     val (syncedLyricsClickable, onSyncedLyricsClickable) = rememberPreference(LyricClickable, defaultValue = true)
+    val (preloadKaraokeLyrics, onPreloadKaraokeLyricsChange) = rememberPreference(
+        com.dd3boh.outertune.constants.PreloadKaraokeLyricsKey,
+        defaultValue = false
+    )
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth()
@@ -572,6 +588,13 @@ fun ColumnScope.LyricAdvancedFrag() {
             icon = { Icon(Icons.Rounded.TouchApp, null) },
             checked = syncedLyricsClickable,
             onCheckedChange = onSyncedLyricsClickable
+        )
+        SwitchPreference(
+            title = { Text(stringResource(R.string.preload_karaoke_lyrics_title)) },
+            description = stringResource(R.string.preload_karaoke_lyrics_description),
+            icon = { Icon(Icons.Rounded.Refresh, null) },
+            checked = preloadKaraokeLyrics,
+            onCheckedChange = onPreloadKaraokeLyricsChange
         )
     }
     Spacer(modifier = Modifier.height(16.dp))

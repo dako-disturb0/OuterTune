@@ -91,10 +91,28 @@ class LyricsHelper @Inject constructor(
      * @param mediaMetadata Song to fetch lyrics for
      * @param forceRefresh If true, bypasses cache and database lookup and re-fetches from providers
      */
-    suspend fun getLyrics(mediaMetadata: MediaMetadata, forceRefresh: Boolean = false): SemanticLyrics? {
+    /**
+     * Retrieve lyrics from all sources
+     *
+     * How lyrics are resolved are determined by PreferLocalLyrics settings key. If this is true, prioritize local lyric
+     * files over all cloud providers, true is vice versa.
+     *
+     * Lyrics stored in the database are fetched first. If this is not available, it is resolved by other means.
+     * If local lyrics are preferred, lyrics from the lrc file is fetched, and then resolve by other means.
+     *
+     * @param mediaMetadata Song to fetch lyrics for
+     * @param forceRefresh If true, bypasses cache and database lookup and re-fetches from providers
+     * @param onIntermediateResult Optional callback invoked when fast normal lyrics are loaded before karaoke lyrics
+     */
+    suspend fun getLyrics(
+        mediaMetadata: MediaMetadata,
+        forceRefresh: Boolean = false,
+        onIntermediateResult: (suspend (SemanticLyrics) -> Unit)? = null
+    ): SemanticLyrics? {
         val trim = context.dataStore.get(LyricTrimKey, defaultValue = false)
         val multiline = context.dataStore.get(MultilineLrcKey, defaultValue = true)
         val prefLocal = context.dataStore.get(LyricSourcePrefKey, true)
+        val preloadKaraoke = context.dataStore.get(com.dd3boh.outertune.constants.PreloadKaraokeLyricsKey, defaultValue = false)
         val cacheKey = mediaMetadata.lyricsCacheKey
 
         if (forceRefresh) {
@@ -134,8 +152,7 @@ class LyricsHelper @Inject constructor(
                 return parseLrc(dbLyrics, trim, multiline)
             }
 
-            // "lazy eval" the remote lyrics cuz it is laughably slow
-            remoteLyrics = getRemoteLyrics(mediaMetadata)
+            remoteLyrics = getRemoteLyrics(mediaMetadata, trim, multiline, preloadKaraoke, onIntermediateResult)
             if (remoteLyrics != null) {
                 singleLyricsCache.put(cacheKey, remoteLyrics)
                 database.query {
@@ -149,7 +166,7 @@ class LyricsHelper @Inject constructor(
                 return parseLrc(remoteLyrics, trim, multiline)
             }
         } else {
-            remoteLyrics = getRemoteLyrics(mediaMetadata)
+            remoteLyrics = getRemoteLyrics(mediaMetadata, trim, multiline, preloadKaraoke, onIntermediateResult)
             if (remoteLyrics != null) {
                 singleLyricsCache.put(cacheKey, remoteLyrics)
                 database.query {
@@ -182,7 +199,13 @@ class LyricsHelper @Inject constructor(
     /**
      * Lookup lyrics from remote providers concurrently in user priority order.
      */
-    private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): String? = withContext(Dispatchers.IO) {
+    private suspend fun getRemoteLyrics(
+        mediaMetadata: MediaMetadata,
+        trim: Boolean = false,
+        multiline: Boolean = true,
+        preloadKaraoke: Boolean = false,
+        onIntermediateResult: (suspend (SemanticLyrics) -> Unit)? = null
+    ): String? = withContext(Dispatchers.IO) {
         val cleanTitle = LyricsSanitizer.cleanTitle(mediaMetadata.title)
         val cleanArtist = LyricsSanitizer.cleanArtist(mediaMetadata.artists.joinToString { it.name })
         val enabledProviders = getOrderedProviders().filter { it.isEnabled(context) }
@@ -205,7 +228,44 @@ class LyricsHelper @Inject constructor(
             }
         }
 
-        // Primary pass with cleaned title in parallel
+        fun hasWordTiming(lyricsStr: String): Boolean {
+            val parsed = parseLrc(lyricsStr, trim, multiline)
+            return parsed is SemanticLyrics.SyncedLyrics && parsed.text.any { it.words != null && it.words.isNotEmpty() }
+        }
+
+        if (preloadKaraoke) {
+            // Progressive preloading mode: launch all providers concurrently
+            var firstNormalResult: String? = null
+            var karaokeResult: String? = null
+
+            val jobs = enabledProviders.map { provider ->
+                provider to async {
+                    val res = fetchFromProvider(provider, cleanTitle)
+                        ?: if (cleanTitle != mediaMetadata.title) fetchFromProvider(provider, mediaMetadata.title) else null
+                    res
+                }
+            }
+
+            for ((_, job) in jobs) {
+                val result = job.await()
+                if (result != null) {
+                    val isKaraoke = hasWordTiming(result)
+                    if (isKaraoke) {
+                        karaokeResult = result
+                        parseLrc(result, trim, multiline)?.let { onIntermediateResult?.invoke(it) }
+                        jobs.forEach { it.second.cancel() }
+                        return@withContext result
+                    } else if (firstNormalResult == null) {
+                        firstNormalResult = result
+                        parseLrc(result, trim, multiline)?.let { onIntermediateResult?.invoke(it) }
+                    }
+                }
+            }
+
+            return@withContext karaokeResult ?: firstNormalResult
+        }
+
+        // Standard mode: sequential pass in priority order
         val cleanJobs = enabledProviders.map { provider ->
             provider to async { fetchFromProvider(provider, cleanTitle) }
         }
