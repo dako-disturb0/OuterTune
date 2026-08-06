@@ -35,18 +35,7 @@ class OnlinePlaylistViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             isLoading.value = true
             YouTube.playlist(playlistId).onSuccess { page ->
-                playlist.value = page.title?.let {
-                    PlaylistItem(
-                        id = playlistId,
-                        title = page.title!!,
-                        author = page.author,
-                        songCount = page.songCount,
-                        thumbnail = page.thumbnail,
-                        playEndpoint = page.playEndpoint,
-                        shuffleEndpoint = page.shuffleEndpoint,
-                        radioEndpoint = page.radioEndpoint
-                    )
-                }
+                playlist.value = page.playlist
                 playlistSongs.value = page.songs
                 continuation = page.continuation
             }.onFailure {

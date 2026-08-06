@@ -43,6 +43,7 @@ import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.utils.completed
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -465,18 +466,37 @@ class SyncUtils @Inject constructor(
                 }
 
                 // Add or update playlists in the database
-                                database.update(localPlaylist, remotePlaylist)
-                            }
+                remotePlaylists.forEach { remotePlaylist ->
+                    // forcefully assign isEditable. These playlists are at mercy of YouTube
+                    var localPlaylist =
+                        localPlaylists.find { remotePlaylist.id == it.playlist.browseId }?.playlist
+                            ?.copy(isEditable = remotePlaylist.isEditable)
+                    if (localPlaylist == null) {
+                        localPlaylist = PlaylistEntity(
+                            name = remotePlaylist.title,
+                            browseId = remotePlaylist.id,
+                            isEditable = remotePlaylist.isEditable,
+                            bookmarkedAt = LocalDateTime.now(),
+                            thumbnailUrl = remotePlaylist.thumbnail,
+                            remoteSongCount = remotePlaylist.songCountText?.let {
+                                Regex("""\d+""").find(it)?.value?.toIntOrNull()
+                            },
+                            playEndpointParams = remotePlaylist.playEndpoint?.params,
+                            shuffleEndpointParams = remotePlaylist.shuffleEndpoint?.params,
+                            radioEndpointParams = remotePlaylist.radioEndpoint?.params
+                        )
+                        database.insert(localPlaylist)
+                    } else {
+                        database.update(localPlaylist, remotePlaylist)
+                    }
 
-                            // Fetch the playlist again after potential insertion/update
-                            val updatedPlaylist =
-                                database.playlistByBrowseId(remotePlaylist.id).firstOrNull()
-                            updatedPlaylist?.let {
-                                val playlistSongMaps = database.songMapsToPlaylist(updatedPlaylist.id)
-                                if (updatedPlaylist.playlist.isEditable || playlistSongMaps.isNotEmpty()) {
-                                    syncPlaylist(remotePlaylist.id, updatedPlaylist.id)
-                                }
-                            }
+                    // Fetch the playlist again after potential insertion/update
+                    val updatedPlaylist =
+                        database.playlistByBrowseId(remotePlaylist.id).firstOrNull()
+                    updatedPlaylist?.let {
+                        val playlistSongMaps = database.songMapsToPlaylist(updatedPlaylist.id)
+                        if (updatedPlaylist.playlist.isEditable || playlistSongMaps.isNotEmpty()) {
+                            syncPlaylist(remotePlaylist.id, updatedPlaylist.id)
                         }
                     }
                 }

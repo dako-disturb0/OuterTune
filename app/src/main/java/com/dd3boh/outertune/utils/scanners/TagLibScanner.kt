@@ -65,7 +65,7 @@ class TagLibScanner : MetadataScanner {
 
 
             // Read audio properties
-            val audioProperties = TagLib.getAudioProperties(fd.dup().detachFd()) ?: return null
+            val audioProperties = TagLib.getAudioProperties(fd.dup().detachFd()) ?: throw RuntimeException("Fatal TagLib scanner audio properties extraction error")
             rawDuration = audioProperties.length
             channels = audioProperties.channels
             sampleRate = audioProperties.sampleRate
@@ -74,7 +74,7 @@ class TagLibScanner : MetadataScanner {
 
 
             // Read metadata
-            val metadata = TagLib.getMetadata(fd = fd.dup().detachFd(), readPictures = false) ?: return null
+            val metadata = TagLib.getMetadata(fd = fd.dup().detachFd(), readPictures = false) ?: throw RuntimeException("Fatal TagLib scanner metadata extraction error")
 
             /**
              * I have never seen such incomprehensible behaviour, and believe me, I have seen some

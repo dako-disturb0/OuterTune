@@ -547,7 +547,7 @@ class QueueBoard(
         shuffleInPlace(item.queue)
         if (preserveCurrent) {
             val s2 = item.queue.find { it.shuffleIndex == 0 }
-            if (s2 != null && currentSong != s2) {
+            if (s2 != null && currentSong != null && currentSong != s2) {
                 currentSong.shuffleIndex = s2.shuffleIndex.also { s2.shuffleIndex = currentSong.shuffleIndex }
             }
             item.queuePos = item.queue.indexOf(currentSong)

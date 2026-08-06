@@ -62,6 +62,9 @@ jobs:
       - name: Accept SDK licenses
         run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
+      - name: Install CMake 3.31.6
+        run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "cmake;3.31.6"
+
       - name: Patch ABI splits in build.gradle.kts
         run: |
           ABI="${{ inputs.abi || 'mix' }}"
