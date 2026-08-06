@@ -434,10 +434,11 @@ fun BoxScope.QueueContent(
 
     LaunchedEffect(queueWindows, detachedQueue) { // add to songs list & scroll
         if (isSearching) return@LaunchedEffect
-        if (detachedQueue != null) {
+        val currentDetachedQueue = detachedQueue
+        if (currentDetachedQueue != null) {
             mutableSongs.apply {
                 clear()
-                addAll(detachedQueue!!.getCurrentQueueShuffled())
+                addAll(currentDetachedQueue.getCurrentQueueShuffled())
             }
             detachedQueue?.let {
                 lazySongsListState.scrollToItem(it.getQueuePosShuffled())

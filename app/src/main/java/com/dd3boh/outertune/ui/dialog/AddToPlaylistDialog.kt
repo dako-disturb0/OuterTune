@@ -159,8 +159,9 @@ fun AddToPlaylistDialog(
             PlaylistListItem(
                 playlist = playlist,
                 trailingContent = {
+                    val currentPlaylistIds = playlistIdsSongParticipation
                     val inPlaylist =
-                        playlistIdsSongParticipation != null && playlist.id in playlistIdsSongParticipation!!
+                        currentPlaylistIds != null && playlist.id in currentPlaylistIds
                     // TODO: checkmark box for all songs in playlist for multiselect
                     val icon =
                         if (inPlaylist && songIds?.size == 1) {

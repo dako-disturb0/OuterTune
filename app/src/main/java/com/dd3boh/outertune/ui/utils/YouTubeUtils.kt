@@ -62,8 +62,8 @@ fun String.resize(
 
     // ── Google CDN (lh3 / ggpht) ──────────────────────────────────────────
     if (isGoogleCdn) {
-        val rawW = width ?: height!!
-        val rawH = height ?: width!!
+        val rawW = width ?: height ?: return this
+        val rawH = height ?: width ?: return this
         val w = getBucketSize(rawW)
         val h = getBucketSize(rawH)
 

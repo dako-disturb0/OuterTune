@@ -62,8 +62,10 @@ class OnlinePlaylistViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             isLoading.value = true
             try {
-                while (continuation != null) {
-                    getContinuation(continuation!!)
+                var currentContinuation = continuation
+                while (currentContinuation != null) {
+                    getContinuation(currentContinuation)
+                    currentContinuation = continuation
                 }
             } finally {
                 isLoading.value = false

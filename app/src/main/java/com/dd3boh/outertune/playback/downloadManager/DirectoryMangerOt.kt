@@ -27,18 +27,19 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
         this.context = context
         this.dir = dir
         try {
-            mainDir = documentFileFromUri(context, dir)
-            if (mainDir == null || !mainDir!!.isDirectory) {
+            val initMainDir = documentFileFromUri(context, dir)
+            mainDir = initMainDir
+            if (initMainDir == null || !initMainDir.isDirectory) {
                 throw IOException("Invalid directory")
             }
 
             // TODO: .nomedia for downloads folder (permission denied)
-//            if (!mainDir!!.listFiles().any { it.name == ".nomedia" }) {
+//            if (!initMainDir.listFiles().any { it.name == ".nomedia" }) {
 //                documentFileFromUri(context, dir)?.createFile("audio/mka", ".nomedia")
 //            }
 
             val newAllDirs = mutableListOf<DocumentFile>()
-            newAllDirs.add(mainDir!!)
+            newAllDirs.add(initMainDir)
             if (extraDirs.isNotEmpty()) {
                 newAllDirs.addAll(
                     documentFileFromUri(context, extraDirs.filterNot { it == dir }).filter { it.isDirectory }
@@ -47,9 +48,10 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
             allDirs = newAllDirs.toList()
             Log.i(TAG, "Download manager initialized successfully. ${allDirs.size}")
         } catch (e: Exception) {
-            if (mainDir == null) {
+            val caughtMainDir = mainDir
+            if (caughtMainDir == null) {
                 Log.w(TAG, "Failed to initiate download manager: No directory provided")
-            } else if (!mainDir!!.isDirectory) {
+            } else if (!caughtMainDir.isDirectory) {
                 Log.w(TAG, "Failed to initiate download manager: Not a valid directory")
             } else {
                 Log.e(TAG, "Failed to initiate download manager: " + e.message)
@@ -128,9 +130,9 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
     }
 
     fun getMainDlStorageUsage(): Long {
-        if (mainDir == null) return -1L
+        val currentMainDir = mainDir ?: return -1L
         val result = ArrayList<DocumentFile>()
-        scanDfRecursive(mainDir!!, result, true)
+        scanDfRecursive(currentMainDir, result, true)
 
         return result.filter { it.name != null }.sumOf { it.length() }
     }

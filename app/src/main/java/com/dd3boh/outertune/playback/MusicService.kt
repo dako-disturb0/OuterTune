@@ -282,7 +282,7 @@ class MusicService : MediaLibraryService(),
             runCatching { controllerFuture.get() }
         }, MoreExecutors.directExecutor())
 
-        connectivityManager = getSystemService()!!
+        connectivityManager = getSystemService() ?: throw IllegalStateException("ConnectivityManager not available")
 
         currentSong.collect(scope) {
             updateNotification()
@@ -483,8 +483,9 @@ class MusicService : MediaLibraryService(),
                 if ((title == null) && initialStatus.title != null) {
                     queueTitle = initialStatus.title
 
-                    if (preloadItem != null && q != null) {
-                        queueBoard.value.renameQueue(q!!, queueTitle)
+                    val safeQ = q
+                    if (preloadItem != null && safeQ != null) {
+                        queueBoard.value.renameQueue(safeQ, queueTitle)
                     }
                 }
 
@@ -529,9 +530,10 @@ class MusicService : MediaLibraryService(),
 
                 // when enqueuing next when player isn't active, play as a new song
                 if (items.isNotEmpty()) {
+                    val firstItem = items.firstOrNull()
                     playQueue(
                         ListQueue(
-                            title = items.first().mediaMetadata.title.toString(),
+                            title = firstItem?.mediaMetadata?.title?.toString() ?: "",
                             items = items.mapNotNull { it.metadata }
                         )
                     )

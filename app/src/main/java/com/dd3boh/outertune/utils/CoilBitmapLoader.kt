@@ -81,7 +81,7 @@ class CoilBitmapLoader @Inject constructor(
                     return@future drawPlaceholder(context)
                 }
 
-                result.image!!.toBitmap()
+                result.image?.toBitmap() ?: return@future drawPlaceholder(context)
             } catch (e: Exception) {
                 reportException(ExecutionException(e))
                 return@future drawPlaceholder(context)

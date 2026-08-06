@@ -253,7 +253,7 @@ fun OnlinePlaylistScreen(
             onDismiss = { showRemoveDownloadDialog = false },
             content = {
                 Text(
-                    text = stringResource(R.string.remove_download_playlist_confirm, playlist?.title!!),
+                    text = stringResource(R.string.remove_download_playlist_confirm, playlist?.title ?: ""),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(horizontal = 18.dp)
                 )
@@ -346,10 +346,11 @@ fun OnlinePlaylistScreen(
                                                         color = MaterialTheme.colorScheme.onBackground
                                                     ).toSpanStyle()
                                                 ) {
-                                                    if (artist.id != null) {
+                                                    val artistId = artist.id
+                                                    if (artistId != null) {
                                                         withLink(
-                                                            LinkAnnotation.Clickable(artist.id!!) {
-                                                                navController.navigate("artist/${artist.id}")
+                                                            LinkAnnotation.Clickable(artistId) {
+                                                                navController.navigate("artist/$artistId")
                                                             }
                                                         ) { append(artist.name) }
                                                     } else append(artist.name)
@@ -395,8 +396,11 @@ fun OnlinePlaylistScreen(
                                                                     .forEach(::insert)
                                                             }
                                                         } else {
-                                                            database.transaction {
-                                                                update(dbPlaylist!!.playlist.toggleLike())
+                                                            val safeDbPlaylist = dbPlaylist
+                                                            if (safeDbPlaylist != null) {
+                                                                database.transaction {
+                                                                    update(safeDbPlaylist.playlist.toggleLike())
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -449,11 +453,14 @@ fun OnlinePlaylistScreen(
                                                     else -> {
                                                         IconButton(
                                                             onClick = {
-                                                                viewModel.viewModelScope.launch(Dispatchers.IO) {
-                                                                    syncUtils.syncPlaylist(
-                                                                        playlist.id,
-                                                                        dbPlaylist!!.id
-                                                                    )
+                                                                val safeDbPlaylistId = dbPlaylist?.id
+                                                                if (safeDbPlaylistId != null) {
+                                                                    viewModel.viewModelScope.launch(Dispatchers.IO) {
+                                                                        syncUtils.syncPlaylist(
+                                                                            playlist.id,
+                                                                            safeDbPlaylistId
+                                                                        )
+                                                                    }
                                                                 }
                                                                 val _songs = songs.map { it.toMediaMetadata() }
                                                                 downloadUtil.download(_songs)
@@ -520,7 +527,7 @@ fun OnlinePlaylistScreen(
                                             onClick = {
                                                 playerConnection.playQueue(
                                                     ListQueue(
-                                                        playlistId = playlist.playEndpoint!!.playlistId,
+                                                        playlistId = playEndpoint.playlistId,
                                                         title = playlist.title,
                                                         items = songs.map { it.toMediaMetadata() },
                                                     )
@@ -544,7 +551,7 @@ fun OnlinePlaylistScreen(
                                             onClick = {
                                                 playerConnection.playQueue(
                                                     ListQueue(
-                                                        playlistId = playlist.playEndpoint!!.playlistId,
+                                                        playlistId = playlist.playEndpoint?.playlistId ?: "",
                                                         title = playlist.title,
                                                         items = songs.map { it.toMediaMetadata() },
                                                         startShuffled = true,

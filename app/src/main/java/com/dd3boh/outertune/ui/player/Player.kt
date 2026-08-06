@@ -767,8 +767,10 @@ fun ControlsContent(
                         modifier = Modifier
                             .basicMarquee(iterations = 1, initialDelayMillis = 3000)
                             .clickable(enabled = mediaMetadata?.album != null) {
-                                navController.navigate("album/${mediaMetadata?.album!!.id}")
-                                playerSheetState.collapseSoft()
+                                mediaMetadata?.album?.id?.let { albumId ->
+                                    navController.navigate("album/$albumId")
+                                    playerSheetState.collapseSoft()
+                                }
                             }
                     )
 

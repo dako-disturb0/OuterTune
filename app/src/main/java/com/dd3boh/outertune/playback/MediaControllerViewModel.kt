@@ -92,9 +92,12 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
         val instance = get()
         var skip = false
         if (instance != null) {
-            val ds = LifecycleCallbackListImpl.DisposableImpl()
-            ds.callback(instance, controllerLifecycle!!.lifecycle)
-            skip = ds.disposed
+            val currentControllerLifecycle = controllerLifecycle
+            if (currentControllerLifecycle != null) {
+                val ds = LifecycleCallbackListImpl.DisposableImpl()
+                ds.callback(instance, currentControllerLifecycle.lifecycle)
+                skip = ds.disposed
+            }
         }
         if (instance == null || !skip) {
             connectionListeners.addCallback(lifecycle, callback)
@@ -111,8 +114,9 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun get(): MediaBrowser? {
-        if (controllerFuture?.isDone == true && controllerFuture?.isCancelled == false) {
-            return controllerFuture!!.get()
+        val future = controllerFuture
+        if (future?.isDone == true && future.isCancelled == false) {
+            return future.get()
         }
         return null
     }

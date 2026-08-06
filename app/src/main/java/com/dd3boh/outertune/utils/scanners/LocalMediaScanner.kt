@@ -339,41 +339,44 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
                     unlinkSongGenres(songToUpdate.id)
 
                     artistsToDo.forEachIndexed { index, item ->
-                        if (item.first == null) {
+                        val existingArtist = item.first
+                        if (existingArtist == null) {
                             // artist does not exist in db, add it then link it
                             insert(item.second)
                             insert(SongArtistMap(songToUpdate.id, item.second.id, index))
                         } else {
                             // artist does  exist in db, link to it
-                            insert(SongArtistMap(songToUpdate.id, item.first!!.id, index))
+                            insert(SongArtistMap(songToUpdate.id, existingArtist.id, index))
                         }
                     }
 
                     genreToDo.forEachIndexed { index, item ->
-                        if (item.first == null) {
+                        val existingGenre = item.first
+                        if (existingGenre == null) {
                             // genre does not exist in db, add it then link it
                             insert(item.second)
                             insert(SongGenreMap(songToUpdate.id, item.second.id, index))
                         } else {
                             // genre does exist in db, link to it
-                            insert(SongGenreMap(songToUpdate.id, item.first!!.id, index))
+                            insert(SongGenreMap(songToUpdate.id, existingGenre.id, index))
                         }
                     }
 
                     albumToDo?.let { album ->
-                        if (album.first == null) {
+                        val existingAlbum = album.first
+                        if (existingAlbum == null) {
                             // album does not exist in db, add it then link it
                             insert(album.second)
                             insert(SongAlbumMap(songToUpdate.id, album.second.id, 0))
                         } else {
                             // album does  exist in db, link to it
                             update(
-                                album.first!!.copy(
+                                existingAlbum.copy(
                                     thumbnailUrl = album.second.thumbnailUrl,
-                                    songCount = album.first!!.songCount + 1
+                                    songCount = existingAlbum.songCount + 1
                                 )
                             )
-                            insert(SongAlbumMap(songToUpdate.id, album.first!!.id, album.first!!.songCount))
+                            insert(SongAlbumMap(songToUpdate.id, existingAlbum.id, existingAlbum.songCount))
                         }
                     }
                 }
@@ -775,13 +778,13 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
                 var trackNumber: Int? = null
                 var discNumber: Int? = null
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    bitrate = cursor.getInt(bitrateColumn!!)
+                    bitrate = bitrateColumn?.let { cursor.getInt(it) }
                     if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.TIRAMISU) >= 15) {
-                        bitsPerSample = cursor.getInt(bitsPerSampleColumn!!)
+                        bitsPerSample = bitsPerSampleColumn?.let { cursor.getInt(it) }
                     }
-                    genre = cursor.getString(genreColumn!!)
-                    trackNumber = cursor.getInt(trackNumberColumn!!)
-                    discNumber = cursor.getInt(discNumberColumn!!)
+                    genre = genreColumn?.let { cursor.getString(it) }
+                    trackNumber = trackNumberColumn?.let { cursor.getInt(it) }
+                    discNumber = discNumberColumn?.let { cursor.getInt(it) }
                 }
 
                 if (SCANNER_DEBUG)
@@ -1106,7 +1109,7 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
             }
 
             ownerId = owner
-            return localScanner!!
+            return localScanner ?: throw IllegalStateException("localScanner is null after initialization")
         }
 
         suspend fun destroyScanner(owner: Int) {

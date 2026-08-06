@@ -259,7 +259,8 @@ class DirectoryTree(path: String, var culmSongs: CulmSongs) {
      */
     fun androidStorageWorkaround(): DirectoryTree {
         if (currentDir == "/" && subdirs.size == 1 && files.isEmpty()) {
-            return DirectoryTree("/storage", culmSongs, subdirs.first().subdirs, subdirs.first().files)
+            val firstSubdir = subdirs.firstOrNull() ?: return this
+            return DirectoryTree("/storage", culmSongs, firstSubdir.subdirs, firstSubdir.files)
         }
 
         return this

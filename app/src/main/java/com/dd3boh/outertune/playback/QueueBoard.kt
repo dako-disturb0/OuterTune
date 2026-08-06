@@ -280,7 +280,7 @@ class QueueBoard(
             // add entirely new queue
             // Precondition(s): radio queues never include local songs
             if (masterQueues.size >= maxQueues) {
-                deleteQueue(masterQueues.first())
+                masterQueues.firstOrNull()?.let { deleteQueue(it) }
             }
             val q = ArrayList(mediaList.filterNotNull())
             q.fastForEachIndexed { index, s ->

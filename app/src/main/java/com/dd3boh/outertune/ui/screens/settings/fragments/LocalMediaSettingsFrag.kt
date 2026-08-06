@@ -431,9 +431,9 @@ fun ColumnScope.LocalScannerFrag() {
                         horizontalArrangement = Arrangement.End
                     ) {
                         Switch(
-                            checked = showAddFolderDialog!!,
+                            checked = showAddFolderDialog == true,
                             onCheckedChange = {
-                                showAddFolderDialog = !showAddFolderDialog!!
+                                showAddFolderDialog = showAddFolderDialog != true
                             },
                         )
                     }

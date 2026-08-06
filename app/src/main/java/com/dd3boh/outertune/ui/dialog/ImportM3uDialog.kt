@@ -329,7 +329,7 @@ suspend fun loadM3u(
         context.applicationContext.contentResolver.openInputStream(uri)?.use { stream ->
             val lines = stream.readLines()
             if (lines.isEmpty()) return@runCatching
-            if (lines.first().startsWith("#EXTM3U")) {
+            if (lines.firstOrNull()?.startsWith("#EXTM3U") == true) {
                 lines.forEachIndexed { index, rawLine ->
                     if (rawLine.startsWith("#EXTINF:")) {
                         // maybe later write this to be more efficient

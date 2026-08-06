@@ -489,6 +489,7 @@ private fun PaxsenixStatsCard(
                 }
             }
 
+            val currentStats = stats
             when {
                 error != null -> {
                     Text(
@@ -498,8 +499,8 @@ private fun PaxsenixStatsCard(
                     )
                 }
 
-                stats != null -> {
-                    val s = stats!!
+                currentStats != null -> {
+                    val s = currentStats
 
                     // Overall success rate
                     Row(

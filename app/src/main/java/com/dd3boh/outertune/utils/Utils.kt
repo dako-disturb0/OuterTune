@@ -76,7 +76,7 @@ fun getDownloadState(localDateTime: LocalDateTime?): Int {
  */
 fun getDownloadState(localDateTimes: List<LocalDateTime?>): Int {
     if (localDateTimes.fastAny { it == null }) return Download.STATE_STOPPED
-    if (localDateTimes.all { it!! > DownloadUtil.STATE_DOWNLOADING }) {
+    if (localDateTimes.all { it != null && it > DownloadUtil.STATE_DOWNLOADING }) {
         return Download.STATE_COMPLETED
     } else if (localDateTimes.any { it == DownloadUtil.STATE_DOWNLOADING }) {
         return Download.STATE_DOWNLOADING

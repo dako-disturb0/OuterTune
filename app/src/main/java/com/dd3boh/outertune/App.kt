@@ -94,10 +94,13 @@ class App : Application(), SingletonImageLoader.Factory {
 
         if (dataStore[ProxyEnabledKey] == true) {
             try {
-                YouTube.proxy = Proxy(
-                    dataStore[ProxyTypeKey].toEnum(defaultValue = Proxy.Type.HTTP),
-                    dataStore[ProxyUrlKey]!!.toInetSocketAddress()
-                )
+                val proxyUrl = dataStore[ProxyUrlKey]
+                if (proxyUrl != null) {
+                    YouTube.proxy = Proxy(
+                        dataStore[ProxyTypeKey].toEnum(defaultValue = Proxy.Type.HTTP),
+                        proxyUrl.toInetSocketAddress()
+                    )
+                }
             } catch (e: Exception) {
                 Toast.makeText(this, "Failed to parse proxy url.", LENGTH_SHORT).show()
                 reportException(e)
