@@ -53,6 +53,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -92,7 +93,14 @@ import com.dd3boh.outertune.constants.LyricFontSizeKey
 import com.dd3boh.outertune.constants.LyricKaraokeEnable
 import com.dd3boh.outertune.constants.LyricUpdateSpeed
 import com.dd3boh.outertune.constants.LyricsPosition
+import com.dd3boh.outertune.constants.LyricsRomanizeChineseKey
+import com.dd3boh.outertune.constants.LyricsRomanizeHindiKey
+import com.dd3boh.outertune.constants.LyricsRomanizeJapaneseKey
+import com.dd3boh.outertune.constants.LyricsRomanizeKoreanKey
+import com.dd3boh.outertune.constants.LyricsRomanizeOtherLanguagesKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
+import com.dd3boh.outertune.lyrics.LyricsRomanizationPreferences
+import com.dd3boh.outertune.lyrics.LyricsRomanizer
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.Speed
 import com.dd3boh.outertune.db.entities.LyricsEntity
@@ -105,7 +113,10 @@ import com.dd3boh.outertune.ui.menu.LyricsMenu
 import com.dd3boh.outertune.ui.utils.fadingEdge
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
@@ -138,6 +149,27 @@ fun Lyrics(
     val lyricsUpdateSpeed by rememberEnumPreference(LyricUpdateSpeed, Speed.MEDIUM)
     var lyricRefreshRate = lyricsUpdateSpeed.toLrcRefreshMillis()
 
+    val romanizeJapanese by rememberPreference(LyricsRomanizeJapaneseKey, true)
+    val romanizeKorean by rememberPreference(LyricsRomanizeKoreanKey, true)
+    val romanizeChinese by rememberPreference(LyricsRomanizeChineseKey, true)
+    val romanizeHindi by rememberPreference(LyricsRomanizeHindiKey, true)
+    val romanizeOther by rememberPreference(LyricsRomanizeOtherLanguagesKey, true)
+    val romanizationPreferences = remember(
+        romanizeJapanese,
+        romanizeKorean,
+        romanizeChinese,
+        romanizeHindi,
+        romanizeOther,
+    ) {
+        LyricsRomanizationPreferences(
+            romanizeJapanese = romanizeJapanese,
+            romanizeKorean = romanizeKorean,
+            romanizeChinese = romanizeChinese,
+            romanizeHindi = romanizeHindi,
+            romanizeOther = romanizeOther,
+        )
+    }
+
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     // NOTE: lyricsModel is the current display lyrics that is updated by playerLyrics AND/OR manually
@@ -148,6 +180,8 @@ fun Lyrics(
     var lyricsModel by remember { mutableStateOf<SemanticLyrics?>(null) }
 
     val lines: SnapshotStateList<LyricLine> = remember { mutableStateListOf<LyricLine>() }
+    // Indexed by the parsed line so romanization never changes timing data.
+    val romanizedLines = remember { mutableStateMapOf<Int, String>() }
 
     val isSynced = remember(lyricsModel) {
         lyricsModel is SemanticLyrics.SyncedLyrics
@@ -180,6 +214,51 @@ fun Lyrics(
                     )
                 )
                 lyricRefreshRate = Speed.SLOW.toLrcRefreshMillis()
+            }
+        }
+    }
+
+    // Romanize in the background and publish completed lines incrementally.
+    // The original line remains the timing/synchronization source.
+    LaunchedEffect(lyricsModel, romanizationPreferences) {
+        romanizedLines.clear()
+        if (!romanizationPreferences.isEnabled) return@LaunchedEffect
+
+        val sourceLines: List<Triple<String, String?, String?>> = when (val model = lyricsModel) {
+            is SemanticLyrics.SyncedLyrics -> model.text.map {
+                Triple(it.text, it.providerRomanizedText, it.providerRomanizedLanguage)
+            }
+            is SemanticLyrics.UnsyncedLyrics -> listOf(
+                Triple(model.unsyncedText.joinToString("\n") { it.first }, null, null)
+            )
+            null -> emptyList()
+        }
+
+        coroutineScope {
+            val jobs = sourceLines.mapIndexedNotNull { index, (text, providerText, providerLanguage) ->
+                val provided = LyricsRomanizer.providedRomanizedText(
+                    originalText = text,
+                    providerText = providerText,
+                    providerLanguage = providerLanguage,
+                    preferences = romanizationPreferences,
+                )
+                if (provided == null && !LyricsRomanizer.shouldRomanize(text, romanizationPreferences)) {
+                    null
+                } else {
+                    index to async(Dispatchers.Default) {
+                        try {
+                            provided ?: LyricsRomanizer.romanize(text, romanizationPreferences)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+                }
+            }
+
+            jobs.forEach { (index, job) ->
+                job.await()?.let { romanizedLines[index] = it }
             }
         }
     }
@@ -414,6 +493,9 @@ fun Lyrics(
                         lyricFontSizeAdjusted = (lyricFontSizeAdjusted * 0.75).toInt()
                     }
 
+                    val romanizedText = romanizedLines[index]
+                    val romanizedAlpha = if (!isSynced || index == displayedCurrentLineIndex) 0.78f else 0.42f
+
                     Column(
                         horizontalAlignment = when (lyricsTextPosition) {
                             LyricsPosition.LEFT -> Alignment.Start
@@ -437,6 +519,25 @@ fun Lyrics(
                                 haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
                             }
                     ) {
+                        // Keep the original lyric as the primary line and show
+                        // romanization as a smaller, readable Latin hint.
+                        if (romanizedText != null) {
+                            Text(
+                                text = romanizedText,
+                                fontSize = (lyricFontSizeAdjusted * 0.72f).coerceAtLeast(10f).sp,
+                                color = textColor.copy(alpha = romanizedAlpha),
+                                textAlign = when (lyricsTextPosition) {
+                                    LyricsPosition.LEFT -> TextAlign.Left
+                                    LyricsPosition.CENTER -> TextAlign.Center
+                                    LyricsPosition.RIGHT -> TextAlign.Right
+                                },
+                                fontWeight = FontWeight.Normal,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 2.dp)
+                            )
+                        }
+
                         if (currentPos.toULong() in item.start..item.end + 100.toULong() && lyricsFancy
                             && item.words != null && !context.isPowerSaver()
                         ) { // word by word

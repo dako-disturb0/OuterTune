@@ -97,6 +97,13 @@ val LyricFontSizeKey = intPreferencesKey("lyricFontSize")
 val LyricClickable = booleanPreferencesKey("lyricClickable")
 val LyricKaraokeEnable = booleanPreferencesKey("lyricKaraokeEnable")
 val LyricUpdateSpeed = stringPreferencesKey("lyricUpdateSpeed")
+// Romanization is generated only for non-Latin lyric lines. Each language can be
+// disabled independently to keep the display focused on the original lyrics.
+val LyricsRomanizeJapaneseKey = booleanPreferencesKey("lyricsRomanizeJapanese")
+val LyricsRomanizeKoreanKey = booleanPreferencesKey("lyricsRomanizeKorean")
+val LyricsRomanizeChineseKey = booleanPreferencesKey("lyricsRomanizeChinese")
+val LyricsRomanizeHindiKey = booleanPreferencesKey("lyricsRomanizeHindi")
+val LyricsRomanizeOtherLanguagesKey = booleanPreferencesKey("lyricsRomanizeOtherLanguages")
 
 
 /**

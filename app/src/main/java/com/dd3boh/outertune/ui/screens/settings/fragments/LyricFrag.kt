@@ -82,6 +82,11 @@ import com.dd3boh.outertune.constants.LyricTrimKey
 import com.dd3boh.outertune.constants.LyricUpdateSpeed
 import com.dd3boh.outertune.constants.LyricsPosition
 import com.dd3boh.outertune.constants.LyricsProviderOrderKey
+import com.dd3boh.outertune.constants.LyricsRomanizeChineseKey
+import com.dd3boh.outertune.constants.LyricsRomanizeHindiKey
+import com.dd3boh.outertune.constants.LyricsRomanizeJapaneseKey
+import com.dd3boh.outertune.constants.LyricsRomanizeKoreanKey
+import com.dd3boh.outertune.constants.LyricsRomanizeOtherLanguagesKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
 import com.dd3boh.outertune.constants.MultilineLrcKey
 import com.dd3boh.outertune.constants.Speed
@@ -166,6 +171,67 @@ fun ColumnScope.LyricFormatFrag() {
             onCancel = { showFontSizeDialog = false }
         )
     }
+}
+
+
+/**
+ * Romanization is rendered as a smaller secondary line below/above the
+ * original lyrics. The switches map to the same script categories used by
+ * [com.dd3boh.outertune.lyrics.LyricsRomanizer].
+ */
+@Composable
+fun ColumnScope.LyricRomanizationFrag() {
+    val (romanizeJapanese, onRomanizeJapaneseChange) = rememberPreference(
+        LyricsRomanizeJapaneseKey,
+        defaultValue = true
+    )
+    val (romanizeKorean, onRomanizeKoreanChange) = rememberPreference(
+        LyricsRomanizeKoreanKey,
+        defaultValue = true
+    )
+    val (romanizeChinese, onRomanizeChineseChange) = rememberPreference(
+        LyricsRomanizeChineseKey,
+        defaultValue = true
+    )
+    val (romanizeHindi, onRomanizeHindiChange) = rememberPreference(
+        LyricsRomanizeHindiKey,
+        defaultValue = true
+    )
+    val (romanizeOther, onRomanizeOtherChange) = rememberPreference(
+        LyricsRomanizeOtherLanguagesKey,
+        defaultValue = true
+    )
+
+    SwitchPreference(
+        title = { Text(stringResource(R.string.lyrics_romanize_japanese)) },
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = romanizeJapanese,
+        onCheckedChange = onRomanizeJapaneseChange
+    )
+    SwitchPreference(
+        title = { Text(stringResource(R.string.lyrics_romanize_korean)) },
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = romanizeKorean,
+        onCheckedChange = onRomanizeKoreanChange
+    )
+    SwitchPreference(
+        title = { Text(stringResource(R.string.lyrics_romanize_chinese)) },
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = romanizeChinese,
+        onCheckedChange = onRomanizeChineseChange
+    )
+    SwitchPreference(
+        title = { Text(stringResource(R.string.lyrics_romanize_hindi)) },
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = romanizeHindi,
+        onCheckedChange = onRomanizeHindiChange
+    )
+    SwitchPreference(
+        title = { Text(stringResource(R.string.lyrics_romanize_other_languages)) },
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = romanizeOther,
+        onCheckedChange = onRomanizeOtherChange
+    )
 }
 
 

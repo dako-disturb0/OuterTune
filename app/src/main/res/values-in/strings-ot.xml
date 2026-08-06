@@ -58,6 +58,12 @@
     <string name="grp_lyrics_format">Pemformatan</string>
     <string name="grp_lyrics_parser">Analisis lirik</string>
     <string name="grp_lyrics_source">Sumber lirik</string>
+    <string name="grp_lyrics_romanization">Romanisasi</string>
+    <string name="lyrics_romanize_japanese">Romanisasi lirik Jepang ke Latin</string>
+    <string name="lyrics_romanize_korean">Romanisasi lirik Korea ke Latin</string>
+    <string name="lyrics_romanize_chinese">Romanisasi lirik Tionghoa ke Latin</string>
+    <string name="lyrics_romanize_hindi">Romanisasi lirik Hindi ke Latin</string>
+    <string name="lyrics_romanize_other_languages">Romanisasi lirik non-Latin lainnya</string>
     <string name="grp_manual_scanner">Pemindai manual</string>
     <string name="grp_proxy">Proxy</string>
     <string name="grp_sync">Sinkronisasi</string>

@@ -247,6 +247,7 @@ dependencies {
     implementation(libs.room.ktx)
 
     implementation(libs.apache.lang3)
+    implementation(libs.kuromoji.ipadic)
 
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)

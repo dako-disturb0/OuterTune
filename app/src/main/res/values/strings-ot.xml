@@ -206,6 +206,12 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="lyrics_settings_title">Lyrics</string>
     <string name="lyrics_synced_clickable">Clickable lyrics</string>
     <string name="lyrics_trim_title">Remove spaces around lyrics</string>
+    <string name="grp_lyrics_romanization">Romanization</string>
+    <string name="lyrics_romanize_japanese">Romanize Japanese lyrics to Latin</string>
+    <string name="lyrics_romanize_korean">Romanize Korean lyrics to Latin</string>
+    <string name="lyrics_romanize_chinese">Romanize Chinese lyrics to Latin</string>
+    <string name="lyrics_romanize_hindi">Romanize Hindi lyrics to Latin</string>
+    <string name="lyrics_romanize_other_languages">Romanize other non-Latin lyrics</string>
 
     <!-- Paxsenix / Apple Music lyrics provider -->
     <string name="enable_paxsenix">Enable Paxsenix (Apple Music) provider</string>

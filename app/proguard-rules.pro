@@ -84,6 +84,10 @@
     #public static int e(...);
 }
 
+## Romanization
+# Kuromoji loads its dictionary classes/resources through its tokenizer.
+-keep class com.atilika.kuromoji.** { *; }
+
 ## OuterTune required modules
 -keep class wah.mikooomich.ffMetadataEx.** { *; }
 -keep class com.kyant.taglib.** { *; }

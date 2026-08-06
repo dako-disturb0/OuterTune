@@ -470,7 +470,13 @@ sealed class SemanticLyrics {
         var end: ULong,
         val words: MutableList<Word>?,
         var speaker: SpeakerEntity?,
-        var isTranslated: Boolean
+        var isTranslated: Boolean,
+        // Some TTML providers ship a more accurate Latin reading. Keep it
+        // alongside the original text so the UI can prefer it over generated
+        // romanization without affecting lyric timing.
+        val providerRomanizedText: String? = null,
+        val providerRomanizedWords: List<String>? = null,
+        val providerRomanizedLanguage: String? = null,
     ) {
         val isClickable: Boolean
             get() = text.isNotBlank()
@@ -589,7 +595,10 @@ fun parseTtmlToSemanticLyrics(ttmlText: String, trimEnabled: Boolean = false): S
                 end = endMs,
                 words = wordsList,
                 speaker = speaker,
-                isTranslated = false
+                isTranslated = false,
+                providerRomanizedText = line.providerRomanizedText,
+                providerRomanizedWords = line.providerRomanizedWords,
+                providerRomanizedLanguage = line.providerRomanizedLanguage,
             )
         )
     }
