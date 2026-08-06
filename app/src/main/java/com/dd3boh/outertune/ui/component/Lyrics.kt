@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -311,15 +310,12 @@ fun Lyrics(
             .padding(bottom = 12.dp)
     ) {
         if (lyricsModel != null && lyricsModel != uninitializedLyric) {
-            // The indicator pill always needs statusBarsPadding so it never overlaps the status bar,
-            // regardless of whether the user chose "spacing" or "hide_navbar" edge-to-edge mode.
             androidx.compose.material3.Surface(
                 shape = androidx.compose.foundation.shape.CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .statusBarsPadding()   // ← always respect status bar
-                    .padding(top = 8.dp)   // small gap below status bar
+                    .padding(top = 16.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),

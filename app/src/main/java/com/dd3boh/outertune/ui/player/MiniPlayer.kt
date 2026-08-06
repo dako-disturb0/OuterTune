@@ -22,17 +22,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,7 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.Player.STATE_BUFFERING
 import androidx.media3.common.Player.STATE_READY
 import coil3.compose.AsyncImage
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
@@ -76,7 +72,6 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.constants.MiniPlayerHeight
-import com.dd3boh.outertune.constants.MiniPlayerLyricModeKey
 import com.dd3boh.outertune.constants.ShowLyricInMiniPlayerKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.extensions.togglePlayPause
@@ -87,10 +82,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.akanework.gramophone.logic.utils.SemanticLyrics
 import kotlin.math.roundToInt
-
-// ─── Lyric display mode ──────────────────────────────────────────────────────
-private const val LYRIC_MODE_DYNAMIC = "dynamic"
-private const val LYRIC_MODE_STATIC  = "static"
 
 @Composable
 fun MiniPlayer(
@@ -133,14 +124,16 @@ fun MiniPlayer(
         modifier = modifier
             .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 4.dp)
             .fillMaxWidth()
+            .height(MiniPlayerHeight - 8.dp)
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = MiniPlayerHeight - 8.dp)
+                    .fillMaxSize()
                     .padding(end = 6.dp),
             ) {
                 val iconButtonColor = MaterialTheme.colorScheme.onSurface
@@ -152,8 +145,6 @@ fun MiniPlayer(
                             lyricsModel = lyricsModel,
                             currentPosition = position,
                             showLyricInMiniPlayer = showLyricInMiniPlayer,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
                             modifier = Modifier.padding(horizontal = 6.dp)
                         )
                     }
@@ -204,7 +195,6 @@ fun MiniPlayer(
                 }
             }
 
-            // Progress bar pinned at the very bottom of the surface
             LinearProgressIndicator(
                 progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
                 drawStopIndicator = { },
@@ -213,7 +203,8 @@ fun MiniPlayer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(3.dp)
-                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
+                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                    .align(Alignment.BottomCenter),
             )
         }
     }
@@ -227,18 +218,12 @@ fun MiniMediaInfo(
     lyricsModel: SemanticLyrics? = null,
     currentPosition: Long = 0L,
     showLyricInMiniPlayer: Boolean = true,
-    playbackState: Int = STATE_READY,
-    isPlaying: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
     val playerConnection = LocalPlayerConnection.current
     val isWaitingForNetwork by playerConnection?.waitingForNetworkConnection?.collectAsState(initial = false)
         ?: remember { mutableStateOf(false) }
-
-    // Lyric display mode preference
-    val lyricMode by rememberPreference(MiniPlayerLyricModeKey, defaultValue = LYRIC_MODE_STATIC)
-    val isDynamicMode = lyricMode == LYRIC_MODE_DYNAMIC
 
     val px = (ListThumbnailSize.value * density.density).roundToInt()
 
@@ -257,23 +242,13 @@ fun MiniMediaInfo(
         } else null
     }
 
-    // Only show the buffering spinner when the player is genuinely buffering AND supposed to be playing.
-    // Avoid showing it during intentional silent gaps (e.g. between tracks when paused or on STATE_READY).
-    val showBufferingSpinner = remember(playbackState, isPlaying, isWaitingForNetwork, error) {
-        error == null && (
-            isWaitingForNetwork ||
-            (playbackState == STATE_BUFFERING && isPlaying)
-        )
-    }
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
-        // ── Artwork + loading/error overlay ──────────────────────────────────
         BoxWithConstraints(
             modifier = Modifier
-                .padding(vertical = 8.dp, horizontal = 4.dp)
+                .padding(6.dp)
                 .size(48.dp)
         ) {
             AsyncImage(
@@ -285,7 +260,7 @@ fun MiniMediaInfo(
             )
 
             androidx.compose.animation.AnimatedVisibility(
-                visible = error != null || showBufferingSpinner,
+                visible = error != null || isWaitingForNetwork,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
@@ -295,9 +270,8 @@ fun MiniMediaInfo(
                             color = Color.Black.copy(alpha = 0.6f),
                             shape = RoundedCornerShape(ThumbnailCornerRadius)
                         )
-                        .fillMaxSize()
                 ) {
-                    if (showBufferingSpinner) {
+                    if (isWaitingForNetwork) {
                         CircularProgressIndicator(
                             modifier = Modifier
                                 .align(Alignment.Center)
@@ -305,35 +279,32 @@ fun MiniMediaInfo(
                             strokeWidth = 2.dp,
                             color = Color.White
                         )
-                    } else if (error != null) {
+                    } else {
                         Icon(
                             imageVector = Icons.Rounded.Info,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.Center)
+                            modifier = Modifier
+                                .align(Alignment.Center)
                         )
                     }
                 }
             }
         }
 
-        Spacer(Modifier.width(4.dp))
-
-        // ── Title + artist / lyrics ───────────────────────────────────────────
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 4.dp, vertical = 6.dp)
+                .padding(horizontal = 6.dp)
         ) {
             Text(
                 text = mediaMetadata.title,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 15.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-
             AnimatedContent(
                 targetState = currentLyricText,
                 transitionSpec = {
@@ -343,14 +314,8 @@ fun MiniMediaInfo(
                 label = "MiniPlayerLyricAnimation"
             ) { targetLyric ->
                 if (showLyricInMiniPlayer && !targetLyric.isNullOrBlank()) {
-                    // ── Lyric line ─────────────────────────────────────────
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .then(
-                                if (isDynamicMode) Modifier          // expand freely
-                                else Modifier.heightIn(min = 36.dp)  // static: ~3 lines reserved
-                            )
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Subtitles,
@@ -358,34 +323,24 @@ fun MiniMediaInfo(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .size(13.dp)
-                                .padding(end = 2.dp)
+                                .padding(end = 3.dp)
                         )
                         Text(
                             text = targetLyric,
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
-                            // Dynamic: wrap long lines. Static: single line with ellipsis (room already reserved).
-                            maxLines = if (isDynamicMode) Int.MAX_VALUE else 3,
-                            overflow = if (isDynamicMode) TextOverflow.Clip else TextOverflow.Ellipsis,
-                            lineHeight = 16.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 } else {
-                    // ── Artist fallback ────────────────────────────────────
                     Text(
                         text = mediaMetadata.artists.joinToString { it.name },
                         color = MaterialTheme.colorScheme.secondary,
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .then(
-                                // Keep height consistent with lyric area when Static mode is on
-                                if (!isDynamicMode && showLyricInMiniPlayer)
-                                    Modifier.heightIn(min = 36.dp)
-                                else Modifier
-                            )
                     )
                 }
             }

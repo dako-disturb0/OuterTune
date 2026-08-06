@@ -83,7 +83,6 @@ import com.dd3boh.outertune.constants.LyricUpdateSpeed
 import com.dd3boh.outertune.constants.LyricsPosition
 import com.dd3boh.outertune.constants.LyricsProviderOrderKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
-import com.dd3boh.outertune.constants.MiniPlayerLyricModeKey
 import com.dd3boh.outertune.constants.MultilineLrcKey
 import com.dd3boh.outertune.constants.Speed
 import com.dd3boh.outertune.extensions.move
@@ -110,10 +109,6 @@ fun ColumnScope.LyricFormatFrag() {
         com.dd3boh.outertune.constants.ShowLyricInMiniPlayerKey,
         defaultValue = true
     )
-    val (miniPlayerLyricMode, onMiniPlayerLyricModeChange) = rememberPreference(
-        MiniPlayerLyricModeKey,
-        defaultValue = "static"
-    )
 
     var showFontSizeDialog by remember {
         mutableStateOf(false)
@@ -126,26 +121,6 @@ fun ColumnScope.LyricFormatFrag() {
         checked = showLyricInMiniPlayer,
         onCheckedChange = onShowLyricInMiniPlayerChange
     )
-
-    AnimatedVisibility(
-        visible = showLyricInMiniPlayer,
-        enter = expandVertically() + fadeIn(),
-        exit = shrinkVertically() + fadeOut(),
-    ) {
-        ListPreference(
-            title = { Text(stringResource(R.string.miniplayer_lyric_mode_title)) },
-            icon = { Icon(Icons.Rounded.Lyrics, null) },
-            selectedValue = miniPlayerLyricMode,
-            values = listOf("static", "dynamic"),
-            valueText = { mode ->
-                when (mode) {
-                    "dynamic" -> stringResource(R.string.miniplayer_lyric_mode_dynamic)
-                    else      -> stringResource(R.string.miniplayer_lyric_mode_static)
-                }
-            },
-            onValueSelected = onMiniPlayerLyricModeChange
-        )
-    }
 
     EnumListPreference(
         title = { Text(stringResource(R.string.lyrics_text_position)) },
