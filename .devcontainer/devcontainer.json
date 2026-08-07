@@ -3,6 +3,9 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
   "containerEnv": {
     "ANDROID_HOME": "/opt/android-sdk",
     "KOTLIN_HOME": "/opt/kotlin"
@@ -13,7 +16,8 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "kotlin.languageServer.enabled": true
+        "kotlin.languageServer.enabled": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
       },
       "extensions": [
         "fwcd.kotlin",
@@ -22,5 +26,6 @@
       ]
     }
   },
+  "updateRemoteUserUID": true,
   "remoteUser": "vscode"
 }
