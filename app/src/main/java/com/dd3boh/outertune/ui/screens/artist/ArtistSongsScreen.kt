@@ -202,22 +202,19 @@ fun ArtistSongsScreen(
 
                     thumbnailSize = thumbnailSize,
                     onPlay = {
-                        val artistId = artist?.id
-                        if (artistId != null) {
-                            viewModel.viewModelScope.launch(Dispatchers.IO) {
-                                val playlistId = YouTube.artist(artistId).getOrNull()
-                                    ?.artist?.shuffleEndpoint?.playlistId
+                        viewModel.viewModelScope.launch(Dispatchers.IO) {
+                            val playlistId = YouTube.artist(artist?.id!!).getOrNull()
+                                ?.artist?.shuffleEndpoint?.playlistId
 
-                                withContext(Dispatchers.Main) {
-                                    playerConnection.playQueue(
-                                        ListQueue(
-                                            title = artist?.artist?.name,
-                                            items = songs.map { it.toMediaMetadata() },
-                                            startIndex = index,
-                                            playlistId = playlistId
-                                        )
+                            withContext(Dispatchers.Main) {
+                                playerConnection.playQueue(
+                                    ListQueue(
+                                        title = artist?.artist?.name,
+                                        items = songs.map { it.toMediaMetadata() },
+                                        startIndex = index,
+                                        playlistId = playlistId
                                     )
-                                }
+                                )
                             }
                         }
                     },

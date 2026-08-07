@@ -78,8 +78,7 @@ class DownloadUtil @Inject constructor(
 ) {
     val TAG = DownloadUtil::class.simpleName.toString()
 
-    private val connectivityManager = context.getSystemService<ConnectivityManager>()
-        ?: throw IllegalStateException("ConnectivityManager not available")
+    private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
     private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
     private val songUrlCache = HashMap<String, Pair<String, Long>>()
     private val dataSourceFactory = ResolvingDataSource.Factory(
@@ -117,11 +116,11 @@ class DownloadUtil @Inject constructor(
                 FormatEntity(
                     id = mediaId,
                     itag = format.itag,
-                    mimeType = format.mimeType.split(";").firstOrNull() ?: "",
-                    codecs = format.mimeType.split("codecs=").getOrNull(1)?.removeSurrounding("\"") ?: "",
+                    mimeType = format.mimeType.split(";")[0],
+                    codecs = format.mimeType.split("codecs=")[1].removeSurrounding("\""),
                     bitrate = format.bitrate,
                     sampleRate = format.audioSampleRate,
-                    contentLength = format.contentLength ?: 0L,
+                    contentLength = format.contentLength!!,
                     loudnessDb = playbackData.audioConfig?.loudnessDb,
                     playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl
                 )
@@ -233,7 +232,7 @@ class DownloadUtil @Inject constructor(
         val output = ByteArrayOutputStream()
         try {
             for (span in spans) {
-                val file: File = span.file ?: continue
+                val file: File? = span.file
                 FileInputStream(file).use { fis ->
                     fis.copyTo(output)
                 }
@@ -283,10 +282,9 @@ class DownloadUtil @Inject constructor(
 
             // actual migration code
             val downloadedSongs = mutableMapOf<String, Download>()
-            downloadManager.downloadIndex.getDownloads().use { cursor ->
-                while (cursor.moveToNext()) {
-                    downloadedSongs[cursor.download.request.id] = cursor.download
-                }
+            val cursor = downloadManager.downloadIndex.getDownloads()
+            while (cursor.moveToNext()) {
+                downloadedSongs[cursor.download.request.id] = cursor.download
             }
 
             // copy all completed downloads
@@ -358,9 +356,7 @@ class DownloadUtil @Inject constructor(
         // new files
         val availableDownloads = dbDownloads.minus(missingFiles)
         availableDownloads.forEach { s ->
-            s.song.dateDownload?.let { date ->
-                result[s.song.id] = date
-            }
+            result[s.song.id] = s.song.dateDownload!! // sql should cover our butts
         }
 
         downloads.value = result

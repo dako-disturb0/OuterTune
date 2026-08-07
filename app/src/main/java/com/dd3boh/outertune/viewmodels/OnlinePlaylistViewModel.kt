@@ -21,7 +21,7 @@ class OnlinePlaylistViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     database: MusicDatabase
 ) : ViewModel() {
-    private val playlistId = savedStateHandle.get<String>("playlistId") ?: ""
+    private val playlistId = savedStateHandle.get<String>("playlistId")!!
 
     val playlist = MutableStateFlow<PlaylistItem?>(null)
     val playlistSongs = MutableStateFlow<List<SongItem>>(emptyList())
@@ -34,13 +34,14 @@ class OnlinePlaylistViewModel @Inject constructor(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             isLoading.value = true
-            YouTube.playlist(playlistId).onSuccess { page ->
-                playlist.value = page.playlist
-                playlistSongs.value = page.songs
-                continuation = page.continuation
-            }.onFailure {
-                reportException(it)
-            }
+            YouTube.playlist(playlistId)
+                .onSuccess { playlistPage ->
+                    playlist.value = playlistPage.playlist
+                    playlistSongs.value = playlistPage.songs
+                    continuation = playlistPage.songsContinuation
+                }.onFailure {
+                    reportException(it)
+                }
             isLoading.value = false
         }
     }
@@ -49,34 +50,25 @@ class OnlinePlaylistViewModel @Inject constructor(
         continuation?.let {
             isLoading.value = true
             viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    getContinuation(it)
-                } finally {
-                    isLoading.value = false
-                }
+                getContinuation(it)
             }
+            isLoading.value = false
         }
     }
 
     fun loadRemainingSongs() {
         viewModelScope.launch(Dispatchers.IO) {
             isLoading.value = true
-            try {
-                var currentContinuation = continuation
-                while (currentContinuation != null) {
-                    getContinuation(currentContinuation)
-                    currentContinuation = continuation
-                }
-            } finally {
-                isLoading.value = false
+            while (continuation != null) {
+                getContinuation(continuation!!)
             }
+            isLoading.value = false
         }
     }
 
     suspend fun getContinuation(continuation: String) {
         val continuationPage = YouTube.playlistContinuation(continuation).getOrElse { e ->
             reportException(e)
-            this.continuation = null
             return
         }
         playlistSongs.value = playlistSongs.value + continuationPage.songs

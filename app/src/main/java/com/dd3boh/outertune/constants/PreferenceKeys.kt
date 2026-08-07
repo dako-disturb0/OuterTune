@@ -121,13 +121,7 @@ val EnableLrcLibKey = booleanPreferencesKey("enableLrcLib")
 val EnableSimpMusicKey = booleanPreferencesKey("enableSimpMusic")
 val EnableBetterLyricsKey = booleanPreferencesKey("enableBetterLyrics")
 val EnablePaxsenixKey = booleanPreferencesKey("enablePaxsenix")
-val EnablePaxsenixAppleMusicKey = booleanPreferencesKey("enablePaxsenixAppleMusic")
-val EnablePaxsenixSpotifyKey = booleanPreferencesKey("enablePaxsenixSpotify")
-val EnablePaxsenixMusixmatchKey = booleanPreferencesKey("enablePaxsenixMusixmatch")
-val EnablePaxsenixNeteaseKey = booleanPreferencesKey("enablePaxsenixNetease")
-val EnablePaxsenixYouTubeKey = booleanPreferencesKey("enablePaxsenixYouTube")
-val EnableMegalobizKey = booleanPreferencesKey("enableMegalobiz")
-// Comma-separated ordered list of provider names
+// Comma-separated ordered list of provider names, e.g. "Paxsenix (Apple Music),BetterLyrics,SimpMusic,..."
 val LyricsProviderOrderKey = stringPreferencesKey("lyricsProviderOrder")
 val UseLoginForBrowse = booleanPreferencesKey("useLoginForBrowse")
 

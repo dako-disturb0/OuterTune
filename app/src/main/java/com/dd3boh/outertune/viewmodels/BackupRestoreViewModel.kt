@@ -75,6 +75,11 @@ class BackupRestoreViewModel @Inject constructor(
 
                             InternalDatabase.DB_NAME -> {
                                 Log.i(TAG, "Starting database restore")
+                                runBlocking(Dispatchers.IO) {
+                                    database.checkpoint()
+                                }
+                                database.close()
+
                                 Log.i(TAG, "Testing new database for compatibility...")
                                 val destFile = context.getDatabasePath(InternalDatabase.TEST_DB_NAME)
                                 destFile.parentFile?.apply {
@@ -96,10 +101,9 @@ class BackupRestoreViewModel @Inject constructor(
 
                                 if (status) {
                                     Log.i(TAG, "Found valid database, proceeding with restore")
-                                    val dbPath = context.getDatabasePath(InternalDatabase.DB_NAME)
-                                    destFile.inputStream().use { input ->
-                                        FileOutputStream(dbPath).use { outputStream ->
-                                            input.copyTo(outputStream)
+                                    destFile.inputStream().use { inputStream ->
+                                        FileOutputStream(database.openHelper.writableDatabase.path).use { outputStream ->
+                                            inputStream.copyTo(outputStream)
                                         }
                                     }
                                 } else {

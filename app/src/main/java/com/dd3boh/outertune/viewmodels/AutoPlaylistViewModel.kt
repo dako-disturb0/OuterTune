@@ -35,7 +35,7 @@ class AutoPlaylistViewModel @Inject constructor(
     database: MusicDatabase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val playlistId = savedStateHandle.get<String>("playlistId") ?: ""
+    val playlistId = savedStateHandle.get<String>("playlistId")!!
 
     val thumbnail: StateFlow<ImageVector> = MutableStateFlow(
         when (playlistId) {

@@ -57,7 +57,7 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
                             } catch (e: ExecutionException) {
                                 if (e.cause !is SecurityException)
                                     throw e
-                                if (e.cause?.message != "Session rejected the connection request.")
+                                if (e.cause!!.message != "Session rejected the connection request.")
                                     throw e
                                 Log.w(
                                     "MediaControllerViewMdel", "Session rejected the connection" +
@@ -92,12 +92,9 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
         val instance = get()
         var skip = false
         if (instance != null) {
-            val currentControllerLifecycle = controllerLifecycle
-            if (currentControllerLifecycle != null) {
-                val ds = LifecycleCallbackListImpl.DisposableImpl()
-                ds.callback(instance, currentControllerLifecycle.lifecycle)
-                skip = ds.disposed
-            }
+            val ds = LifecycleCallbackListImpl.DisposableImpl()
+            ds.callback(instance, controllerLifecycle!!.lifecycle)
+            skip = ds.disposed
         }
         if (instance == null || !skip) {
             connectionListeners.addCallback(lifecycle, callback)
@@ -114,9 +111,8 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun get(): MediaBrowser? {
-        val future = controllerFuture
-        if (future?.isDone == true && future.isCancelled == false) {
-            return future.get()
+        if (controllerFuture?.isDone == true && controllerFuture?.isCancelled == false) {
+            return controllerFuture!!.get()
         }
         return null
     }
@@ -134,7 +130,7 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
             if (controllerFuture?.isCancelled == false) {
                 controllerFuture?.get()?.release()
             } else {
-                Log.w("MediaControllerVM", "controllerFuture is cancelled")
+                throw IllegalStateException("controllerFuture?.isCancelled != false")
             }
         } else {
             controllerFuture?.cancel(true)
@@ -166,16 +162,11 @@ class MediaControllerViewModel(application: Application) : AndroidViewModel(appl
 
     fun getService(): MusicService? {
         val mediaBrowser = get() ?: return null
-        return try {
-            val result = mediaBrowser.sendCustomCommand(
-                SessionCommand(MusicService.COMMAND_GET_BINDER, Bundle.EMPTY),
-                Bundle.EMPTY
-            ).get()
-            val binder = result.extras.getBinder("music_binder") as? MusicService.MusicBinder
-            binder?.service
-        } catch (e: Exception) {
-            Log.e("MediaControllerVM", "Failed to get service binder", e)
-            null
+        mediaBrowser.sendCustomCommand(
+            SessionCommand(MusicService.COMMAND_GET_BINDER, Bundle.EMPTY),
+            Bundle.EMPTY
+        ).get().extras.run {
+            return (getBinder("music_binder") as MusicService.MusicBinder).service
         }
     }
 

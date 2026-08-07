@@ -80,9 +80,6 @@ interface SongsDao {
     @Query("SELECT count from playCount WHERE song = :songId AND year = :year AND month = :month")
     fun getPlayCountByMonth(songId: String?, year: Int, month: Int): Flow<Int>
 
-    @Query("SELECT IFNULL(count, 0) from playCount WHERE song = :songId AND year = :year AND month = :month")
-    fun getPlayCountByMonthDirect(songId: String?, year: Int, month: Int): Int?
-
     @Transaction
     @Query("SELECT * FROM song WHERE liked AND dateDownload IS NULL")
     fun likedSongsNotDownloaded(): Flow<List<Song>>
@@ -377,7 +374,10 @@ interface SongsDao {
      */
     fun incrementPlayCount(songId: String) {
         val time = LocalDateTime.now().atOffset(ZoneOffset.UTC)
-        val oldCount = getPlayCountByMonthDirect(songId, time.year, time.monthValue) ?: 0
+        var oldCount: Int
+        runBlocking {
+            oldCount = getPlayCountByMonth(songId, time.year, time.monthValue).first()
+        }
 
         // add new
         if (oldCount <= 0) {

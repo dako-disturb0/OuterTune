@@ -143,11 +143,8 @@ fun YouTubePlaylistMenu(
                                 }
                             }
                         } else {
-                            val safeDbPlaylist = dbPlaylist
-                            if (safeDbPlaylist != null) {
-                                database.transaction {
-                                    update(safeDbPlaylist.playlist.toggleLike())
-                                }
+                            database.transaction {
+                                update(dbPlaylist!!.playlist.toggleLike())
                             }
                         }
                     }
@@ -172,14 +169,14 @@ fun YouTubePlaylistMenu(
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         )
     ) {
-        playlist.playEndpoint?.let { playEndpoint ->
+        playlist.playEndpoint?.let {
             GridMenuItem(
                 icon = Icons.Rounded.PlayArrow,
                 title = R.string.play
             ) {
                 playerConnection.playQueue(
                     ListQueue(
-                        playlistId = playEndpoint.playlistId,
+                        playlistId = playlist.playEndpoint!!.playlistId,
                         title = playlist.title,
                         items = songs.map { it.toMediaMetadata() },
                     )
@@ -196,7 +193,7 @@ fun YouTubePlaylistMenu(
             ) {
                 playerConnection.playQueue(
                     ListQueue(
-                        playlistId = shuffleEndpoint.playlistId ?: playlist.playEndpoint?.playlistId ?: "",
+                        playlistId = playlist.playEndpoint!!.playlistId,
                         title = playlist.title,
                         items = songs.map { it.toMediaMetadata() },
                         startShuffled = true,

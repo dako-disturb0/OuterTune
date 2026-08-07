@@ -49,9 +49,8 @@ class PoTokenGenerator {
 
         val (poTokenGenerator, streamingPot, hasBeenRecreated) =
             webPoTokenGenLock.withLock {
-                val currentGenerator = webPoTokenGenerator
                 val shouldRecreate =
-                    forceRecreate || currentGenerator == null || currentGenerator.isExpired || webPoTokenSessionId != sessionId
+                    forceRecreate || webPoTokenGenerator == null || webPoTokenGenerator!!.isExpired || webPoTokenSessionId != sessionId
 
                 if (shouldRecreate) {
                     webPoTokenSessionId = sessionId
@@ -61,20 +60,14 @@ class PoTokenGenerator {
                     }
 
                     // create a new webPoTokenGenerator
-                    val newGenerator = PoTokenWebView.getNewPoTokenGenerator(App.instance)
-                    webPoTokenGenerator = newGenerator
+                    webPoTokenGenerator = PoTokenWebView.getNewPoTokenGenerator(App.instance)
 
                     // The streaming poToken needs to be generated exactly once before generating
                     // any other (player) tokens.
-                    webPoTokenStreamingPot = newGenerator.generatePoToken(sessionId)
+                    webPoTokenStreamingPot = webPoTokenGenerator!!.generatePoToken(webPoTokenSessionId!!)
                 }
 
-                val finalGenerator = webPoTokenGenerator
-                    ?: throw IllegalStateException("webPoTokenGenerator is null after recreation")
-                val finalStreamingPot = webPoTokenStreamingPot
-                    ?: throw IllegalStateException("webPoTokenStreamingPot is null after recreation")
-
-                Triple(finalGenerator, finalStreamingPot, shouldRecreate)
+                Triple(webPoTokenGenerator!!, webPoTokenStreamingPot!!, shouldRecreate)
             }
 
         val playerPot = try {

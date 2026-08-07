@@ -135,7 +135,7 @@ fun Lyrics(
     val lyricsFontSize by rememberPreference(LyricFontSizeKey, 20)
 
     val lyricsClickable by rememberPreference(LyricClickable, true)
-    val lyricsFancy by rememberPreference(LyricKaraokeEnable, true)
+    val lyricsFancy by rememberPreference(LyricKaraokeEnable, false)
     val lyricsUpdateSpeed by rememberEnumPreference(LyricUpdateSpeed, Speed.MEDIUM)
     var lyricRefreshRate = lyricsUpdateSpeed.toLrcRefreshMillis()
 

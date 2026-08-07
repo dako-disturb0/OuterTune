@@ -225,12 +225,7 @@ fun PlayerBackground(
                     if (gradientColors.size >= 2) {
                         gradientColors + listOf(dominantColor ?: gradientColors[0])
                     } else if (dominantColor != null) {
-                        val safeDominantColor = dominantColor
-                        if (safeDominantColor != null) {
-                            listOf(safeDominantColor, safeDominantColor.copy(alpha = 0.6f), safeDominantColor)
-                        } else {
-                            emptyList()
-                        }
+                        listOf(dominantColor!!, dominantColor!!.copy(alpha = 0.6f), dominantColor!!)
                     } else {
                         emptyList()
                     }

@@ -86,17 +86,11 @@ class MediaLibrarySessionCallback @Inject constructor(
             MediaSessionConstants.ACTION_TOGGLE_LIBRARY -> toggleLibrary()
             MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> session.player.toggleShuffleMode()
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> session.player.toggleRepeatMode()
-            MusicService.COMMAND_GET_BINDER -> {
-                val s = if (::service.isInitialized) service else null
-                if (s == null) {
-                    return Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_SESSION_DISCONNECTED))
+            MusicService.COMMAND_GET_BINDER -> return Futures.immediateFuture(
+                SessionResult(SessionResult.RESULT_SUCCESS).apply {
+                    extras.putBinder("music_binder", service.MusicBinder())
                 }
-                return Futures.immediateFuture(
-                    SessionResult(SessionResult.RESULT_SUCCESS).apply {
-                        extras.putBinder("music_binder", s.MusicBinder())
-                    }
-                )
-            }
+            )
         }
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
@@ -123,12 +117,8 @@ class MediaLibrarySessionCallback @Inject constructor(
                q.lastSongPos
            )
        } else {
-           val currentSong = q.getCurrentSong()
-           if (currentSong == null) {
-               return@future MediaItemsWithStartPosition(emptyList(), C.INDEX_UNSET, C.TIME_UNSET)
-           }
            return@future MediaItemsWithStartPosition(
-               listOf(currentSong.toMediaItem()),
+               listOf(q.getCurrentSong()!!.toMediaItem()),
                q.getQueuePosShuffled(),
                q.lastSongPos
            )

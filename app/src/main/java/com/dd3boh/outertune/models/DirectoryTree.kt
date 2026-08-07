@@ -129,8 +129,8 @@ class DirectoryTree(path: String, var culmSongs: CulmSongs) {
 
         // search for song in current dir
         if (path.indexOf('/') == -1) {
-            val foundSong: Song? = files.firstOrNull { getFileName(it.song.localPath) == getFileName(path) }
-            Log.v(TAG, "Searching for song, found?: ${foundSong?.id} Name: ${foundSong?.song?.title}")
+            val foundSong: Song = files.first { getFileName(it.song.localPath) == getFileName(path) }
+            Log.v(TAG, "Searching for song, found?: ${foundSong.id} Name: ${foundSong.song.title}")
             return foundSong
         }
 
@@ -259,8 +259,7 @@ class DirectoryTree(path: String, var culmSongs: CulmSongs) {
      */
     fun androidStorageWorkaround(): DirectoryTree {
         if (currentDir == "/" && subdirs.size == 1 && files.isEmpty()) {
-            val firstSubdir = subdirs.firstOrNull() ?: return this
-            return DirectoryTree("/storage", culmSongs, firstSubdir.subdirs, firstSubdir.files)
+            return DirectoryTree("/storage", culmSongs, subdirs.first().subdirs, subdirs.first().files)
         }
 
         return this

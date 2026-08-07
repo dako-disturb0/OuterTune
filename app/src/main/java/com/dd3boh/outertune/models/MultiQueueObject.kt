@@ -46,9 +46,8 @@ data class MultiQueueObject(
      * Retrieve the song at current position in the queue
      */
     fun getCurrentSong(): MediaMetadata? {
-        if (queue.isEmpty()) return null
         validateQueuePos()
-        return queue.getOrNull(queuePos)
+        return queue[queuePos]
     }
 
     /**

@@ -159,9 +159,8 @@ fun AddToPlaylistDialog(
             PlaylistListItem(
                 playlist = playlist,
                 trailingContent = {
-                    val currentPlaylistIds = playlistIdsSongParticipation
                     val inPlaylist =
-                        currentPlaylistIds != null && playlist.id in currentPlaylistIds
+                        playlistIdsSongParticipation != null && playlist.id in playlistIdsSongParticipation!!
                     // TODO: checkmark box for all songs in playlist for multiselect
                     val icon =
                         if (inPlaylist && songIds?.size == 1) {
@@ -188,13 +187,12 @@ fun AddToPlaylistDialog(
                                 songIds = result
                             }
                         }
-                        val targetIds = songIds ?: return@launch
-                        duplicates = database.playlistDuplicates(playlist.id, targetIds)
+                        duplicates = database.playlistDuplicates(playlist.id, songIds!!)
                         if (duplicates.isNotEmpty()) {
                             showDuplicateDialog = true
                         } else {
                             onDismiss()
-                            database.addSongToPlaylist(playlist, targetIds)
+                            database.addSongToPlaylist(playlist, songIds!!)
 
                             if (!playlist.playlist.isLocal) {
                                 playlist.playlist.browseId?.let { plist ->
@@ -245,12 +243,10 @@ fun AddToPlaylistDialog(
                     onClick = {
                         showDuplicateDialog = false
                         onDismiss()
-                        val plist = selectedPlaylist ?: return@TextButton
-                        val sIds = songIds ?: return@TextButton
                         database.transaction {
                             addSongToPlaylist(
-                                plist,
-                                sIds.filter {
+                                selectedPlaylist!!,
+                                songIds!!.filter {
                                     !duplicates.contains(it)
                                 }
                             )
@@ -264,10 +260,8 @@ fun AddToPlaylistDialog(
                     onClick = {
                         showDuplicateDialog = false
                         onDismiss()
-                        val plist = selectedPlaylist ?: return@TextButton
-                        val sIds = songIds ?: return@TextButton
                         database.transaction {
-                            addSongToPlaylist(plist, sIds)
+                            addSongToPlaylist(selectedPlaylist!!, songIds!!)
                         }
                     }
                 ) {

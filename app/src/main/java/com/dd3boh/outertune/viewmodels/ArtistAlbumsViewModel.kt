@@ -14,7 +14,7 @@ class ArtistAlbumsViewModel @Inject constructor(
     database: MusicDatabase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val artistId = savedStateHandle.get<String>("artistId") ?: ""
+    private val artistId = savedStateHandle.get<String>("artistId")!!
     val artist = database.artist(artistId)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 

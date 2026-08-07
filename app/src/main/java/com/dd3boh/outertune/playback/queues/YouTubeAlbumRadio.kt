@@ -22,11 +22,9 @@ class YouTubeAlbumRadio(
         val albumSongs = YouTube.albumSongs(playlistId).getOrThrow()
         val nextResult = YouTube.next(endpoint, continuation).getOrThrow()
         continuation = nextResult.continuation
-        val fromIndex = albumSongs.size.coerceAtMost(nextResult.items.size)
-        val remainingItems = nextResult.items.subList(fromIndex, nextResult.items.size)
         Queue.Status(
             title = nextResult.title,
-            items = (albumSongs + remainingItems).map { it.toMediaMetadata()},
+            items = (albumSongs + nextResult.items.subList(albumSongs.size, nextResult.items.size)).map { it.toMediaMetadata()},
             mediaItemIndex = nextResult.currentIndex ?: 0
         )
     }

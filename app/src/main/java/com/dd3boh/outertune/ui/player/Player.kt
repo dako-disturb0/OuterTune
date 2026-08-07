@@ -213,7 +213,7 @@ fun BottomSheetPlayer(
                 useDarkTheme = useDarkTheme,
             )
         },
-        collapsedBackgroundColor = Color.Transparent,
+        collapsedBackgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
         onDismiss = {
             playerConnection.softKillPlayer()
         },
@@ -767,10 +767,8 @@ fun ControlsContent(
                         modifier = Modifier
                             .basicMarquee(iterations = 1, initialDelayMillis = 3000)
                             .clickable(enabled = mediaMetadata?.album != null) {
-                                mediaMetadata?.album?.id?.let { albumId ->
-                                    navController.navigate("album/$albumId")
-                                    playerSheetState.collapseSoft()
-                                }
+                                navController.navigate("album/${mediaMetadata?.album!!.id}")
+                                playerSheetState.collapseSoft()
                             }
                     )
 

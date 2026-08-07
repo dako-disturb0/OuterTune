@@ -235,8 +235,8 @@ class MainActivity : ComponentActivity() {
         Log.i(MAIN_TAG, "onDestroy() called. isFinishing = $isFinishing")
         try {
             connectivityObserver.unregister()
-        } catch (e: Exception) {
-            // ignore if not initialized or already unregistered
+        } catch (e: UninitializedPropertyAccessException) {
+            // lol
         }
         // https://github.com/androidx/media/issues/805
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (playerConnection?.player?.playWhenReady != true || playerConnection?.player?.mediaItemCount == 0)) {
@@ -255,9 +255,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         lifecycle.addObserver(controllerViewModel)
         controllerViewModel.addControllerCallback(lifecycle) { controller, _ ->
-            if (controllerViewModel.getService() != null) {
-                playerConnection = PlayerConnection(controllerViewModel, database)
-            }
+            playerConnection = PlayerConnection(controllerViewModel, database)
         }
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -317,16 +315,12 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(useDarkTheme) {
                 setSystemBarAppearance(useDarkTheme)
             }
-            DisposableEffect(Unit) {
-                connectivityObserver = NetworkConnectivityObserver(this@MainActivity)
-                onDispose {
-                    try {
-                        connectivityObserver.unregister()
-                    } catch (e: Exception) {
-                        Log.e(MAIN_TAG, "Failed to unregister connectivityObserver", e)
-                    }
-                }
+            try {
+                connectivityObserver.unregister()
+            } catch (e: UninitializedPropertyAccessException) {
+                // lol
             }
+            connectivityObserver = NetworkConnectivityObserver(this@MainActivity)
             val isNetworkConnected by connectivityObserver.networkStatus.collectAsState(true)
 
 
@@ -382,11 +376,10 @@ class MainActivity : ComponentActivity() {
                     fun getNavPadding(): Dp {
                         return if (!useNavRail) (if (slimNav) 52.dp else 68.dp) else MinMiniPlayerHeight
                     }
-                    val miniPlayerGap = 10.dp
 
                     val playerBottomSheetState = rememberBottomSheetState(
                         dismissedBound = 0.dp,
-                        collapsedBound = bottomInset + MiniPlayerHeight + getNavPadding() + miniPlayerGap,
+                        collapsedBound = bottomInset + MiniPlayerHeight + getNavPadding(),
                         expandedBound = maxHeight,
                     )
 
@@ -398,7 +391,7 @@ class MainActivity : ComponentActivity() {
                             // TODO: Navbar is shown in all screens except for oobe (which doesn't use these insets). Idk what do to tbh
                             var bottom = bottomInset + if (!useNavRail) NavigationBarHeight else 0.dp
 
-                            if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight + miniPlayerGap
+                            if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight
                             if (!tabMode) {
                                 windowsInsets
                                     .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
@@ -813,15 +806,16 @@ class MainActivity : ComponentActivity() {
                                                     y = (bottomInset + NavigationBarHeight).roundToPx()
                                                 )
                                             } else {
-                                                val progressCoerced = playerBottomSheetState.progress.coerceIn(0f, 1f)
-                                                val safeProgress = if (progressCoerced.isNaN()) 0f else progressCoerced
-                                                val slideOffset = (bottomInset + NavigationBarHeight) * safeProgress
+                                                val slideOffset =
+                                                    (bottomInset + NavigationBarHeight) * playerBottomSheetState.progress.coerceIn(
+                                                        0f,
+                                                        1f
+                                                    )
                                                 val hideOffset =
                                                     (bottomInset + NavigationBarHeight) * (1 - navigationBarHeight / NavigationBarHeight)
-                                                val totalOffset = slideOffset + hideOffset
                                                 IntOffset(
                                                     x = 0,
-                                                    y = if (totalOffset.value.isNaN()) 0 else totalOffset.roundToPx()
+                                                    y = (slideOffset + hideOffset).roundToPx()
                                                 )
                                             }
                                         }
@@ -865,17 +859,12 @@ class MainActivity : ComponentActivity() {
                                                     } else if (navigationItems.none { scr -> navBackStackEntry?.destination?.hierarchy?.any { it.route == scr.route } == true }) {
                                                         navController.navigateUp()
                                                     } else {
-                                                        val startId = runCatching { navController.graph.startDestinationId }.getOrNull()
-                                                        if (startId != null) {
-                                                            navController.navigate(screen.route) {
-                                                                popUpTo(startId) {
-                                                                    saveState = true
-                                                                }
-                                                                launchSingleTop = true
-                                                                restoreState = true
+                                                        navController.navigate(screen.route) {
+                                                            popUpTo(navController.graph.startDestinationId) {
+                                                                saveState = true
                                                             }
-                                                        } else {
-                                                            navController.navigate(screen.route)
+                                                            launchSingleTop = true
+                                                            restoreState = true
                                                         }
                                                     }
 
@@ -923,15 +912,13 @@ class MainActivity : ComponentActivity() {
                                                     y = (bottomInset + NavigationBarHeight).roundToPx()
                                                 )
                                             } else {
-                                                val progressCoerced = playerBottomSheetState.progress.coerceIn(0f, 1f)
-                                                val safeProgress = if (progressCoerced.isNaN()) 0f else progressCoerced
                                                 val slideOffset =
-                                                    (bottomInset + NavigationBarHeight + leftInset.value) * safeProgress
+                                                    (bottomInset + NavigationBarHeight + leftInset.value) *
+                                                            playerBottomSheetState.progress.coerceIn(0f, 1f)
                                                 val hideOffset =
                                                     (bottomInset + NavigationBarHeight) * (1 - navigationBarHeight / NavigationBarHeight)
-                                                val totalOffset = slideOffset + hideOffset
                                                 IntOffset(
-                                                    x = if (totalOffset.value.isNaN()) 0 else -totalOffset.roundToPx(),
+                                                    x = -(slideOffset + hideOffset).roundToPx(),
                                                     y = 0
                                                 )
                                             }

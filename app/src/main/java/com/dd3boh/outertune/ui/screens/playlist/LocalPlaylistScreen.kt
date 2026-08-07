@@ -273,7 +273,7 @@ fun LocalPlaylistScreen(
             onDismiss = { showRemoveDownloadDialog = false },
             content = {
                 Text(
-                    text = stringResource(R.string.remove_download_playlist_confirm, playlistWithSongs.first?.playlist?.name ?: ""),
+                    text = stringResource(R.string.remove_download_playlist_confirm, playlistWithSongs.first?.playlist!!.name),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(horizontal = 18.dp)
                 )
@@ -319,7 +319,7 @@ fun LocalPlaylistScreen(
             onDismiss = { showDeletePlaylistDialog = false },
             content = {
                 Text(
-                    text = stringResource(R.string.delete_playlist_confirm, playlistWithSongs.first?.playlist?.name ?: ""),
+                    text = stringResource(R.string.delete_playlist_confirm, playlistWithSongs.first?.playlist!!.name),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(horizontal = 18.dp)
                 )
@@ -547,7 +547,7 @@ fun LocalPlaylistScreen(
                         onPlay = {
                             playerConnection.playQueue(
                                 ListQueue(
-                                    title =  playlistWithSongs.first?.playlist?.name,
+                                    title =  playlistWithSongs.first!!.playlist.name,
                                     items = mutableSongs.map { it.song.toMediaMetadata() },
                                     startIndex = index,
                                     playlistId =  playlistWithSongs.first?.playlist?.browseId

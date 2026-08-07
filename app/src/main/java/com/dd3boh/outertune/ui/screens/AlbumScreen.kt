@@ -423,7 +423,7 @@ fun AlbumScreen(
 
             val thumbnailSize = (ListThumbnailSize.value * density.density).roundToInt()
             itemsIndexed(
-                items = albumWithSongsLocal.songs,
+                items = albumWithSongs!!.songs,
                 key = { _, song -> song.id }
             ) { index, song ->
                 SongListItem(

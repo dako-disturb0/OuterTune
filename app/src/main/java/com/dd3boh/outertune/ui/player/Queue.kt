@@ -434,11 +434,10 @@ fun BoxScope.QueueContent(
 
     LaunchedEffect(queueWindows, detachedQueue) { // add to songs list & scroll
         if (isSearching) return@LaunchedEffect
-        val currentDetachedQueue = detachedQueue
-        if (currentDetachedQueue != null) {
+        if (detachedQueue != null) {
             mutableSongs.apply {
                 clear()
-                addAll(currentDetachedQueue.getCurrentQueueShuffled())
+                addAll(detachedQueue!!.getCurrentQueueShuffled())
             }
             detachedQueue?.let {
                 lazySongsListState.scrollToItem(it.getQueuePosShuffled())
@@ -969,7 +968,7 @@ fun BoxScope.QueueContent(
                     ) {
                         fun getQueueLength(): Int {
                             return if (!detachedHead) {
-                                queueWindows.sumOf { it.mediaItem.metadata?.duration ?: 0 }
+                                queueWindows.sumOf { it.mediaItem.metadata!!.duration }
                             } else detachedQueue?.queue?.sumOf { it.duration } ?: 0
                         }
 

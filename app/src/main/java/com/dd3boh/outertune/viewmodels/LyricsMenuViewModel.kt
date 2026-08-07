@@ -11,7 +11,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -58,16 +57,14 @@ class LyricsMenuViewModel @Inject constructor(
     }
 
     fun refetchLyrics(mediaMetadata: MediaMetadata, onDone: (SemanticLyrics?) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 // Delete from DB so it gets re-fetched from providers
                 database.deleteLyricById(mediaMetadata.id)
                 withTimeoutOrNull(LYRIC_FETCH_TIMEOUT) {
                     // forceRefresh=true bypasses all caches
                     val lyrics = lyricsHelper.getLyrics(mediaMetadata, forceRefresh = true)
-                    withContext(Dispatchers.Main) {
-                        onDone(lyrics)
-                    }
+                    onDone(lyrics)
                 }
             } catch (e: CancellationException) {
                 throw e

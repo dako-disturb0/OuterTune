@@ -65,7 +65,7 @@ class TagLibScanner : MetadataScanner {
 
 
             // Read audio properties
-            val audioProperties = TagLib.getAudioProperties(fd.dup().detachFd()) ?: throw RuntimeException("Fatal TagLib scanner audio properties extraction error")
+            val audioProperties = TagLib.getAudioProperties(fd.dup().detachFd())!!
             rawDuration = audioProperties.length
             channels = audioProperties.channels
             sampleRate = audioProperties.sampleRate
@@ -74,7 +74,7 @@ class TagLibScanner : MetadataScanner {
 
 
             // Read metadata
-            val metadata = TagLib.getMetadata(fd = fd.dup().detachFd(), readPictures = false) ?: throw RuntimeException("Fatal TagLib scanner metadata extraction error")
+            val metadata = TagLib.getMetadata(fd = fd.dup().detachFd(), readPictures = false)!!
 
             /**
              * I have never seen such incomprehensible behaviour, and believe me, I have seen some
@@ -193,8 +193,8 @@ class TagLibScanner : MetadataScanner {
 
 
             // deduplicate
-            artistList = ArrayList(artistList.filterNot { it.name == "" }.distinctBy { it.name.lowercase() })
-            genresList = ArrayList(genresList.filterNot { it.title == "" }.distinctBy { it.title.lowercase() })
+            artistList = artistList.filterNot { it.name == "" }.distinctBy { it.name.lowercase() } as ArrayList<ArtistEntity>
+            genresList = genresList.filterNot { it.title == "" }.distinctBy { it.title.lowercase() } as ArrayList<GenreEntity>
 
             return SongTempData(
                 Song(

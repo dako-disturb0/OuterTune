@@ -25,7 +25,6 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.SyncAlt
 import androidx.compose.material3.CircularProgressIndicator
@@ -90,21 +89,6 @@ fun LyricsMenu(
 
     var showEditDialog by rememberSaveable {
         mutableStateOf(false)
-    }
-
-    var showShareLyricsDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    if (showShareLyricsDialog) {
-        val lyricsEntity = lyricsProvider()
-        if (lyricsEntity != null && lyricsEntity.lyrics.isNotBlank()) {
-            com.dd3boh.outertune.ui.component.LyricsShareDialog(
-                mediaMetadata = mediaMetadataProvider(),
-                rawLyricsText = lyricsEntity.lyrics,
-                onDismiss = { showShareLyricsDialog = false }
-            )
-        }
     }
 
     if (showEditDialog) {
@@ -429,12 +413,6 @@ fun LyricsMenu(
             title = R.string.edit
         ) {
             showEditDialog = true
-        }
-        GridMenuItem(
-            icon = Icons.Rounded.Share,
-            title = R.string.share
-        ) {
-            showShareLyricsDialog = true
         }
         GridMenuItem(
             icon = Icons.Rounded.SyncAlt,

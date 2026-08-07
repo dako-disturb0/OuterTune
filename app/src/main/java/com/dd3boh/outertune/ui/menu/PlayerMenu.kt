@@ -455,8 +455,7 @@ fun PlayerMenu(
                     )
                 }
             )
-        val safeLibrarySong = librarySong
-        if (safeLibrarySong?.song?.inLibrary != null && !safeLibrarySong.song.isLocal) {
+        if (librarySong?.song?.inLibrary != null && !librarySong!!.song.isLocal) {
             GridMenuItem(
                 icon = Icons.Rounded.LibraryAddCheck,
                 title = R.string.remove_from_library,
@@ -697,7 +696,7 @@ fun <T> ValueAdjuster(
         )
 
         IconButton(
-            enabled = currentValue != values.firstOrNull(),
+            enabled = currentValue != values.first(),
             onClick = {
                 onValueUpdate(values[values.indexOf(currentValue) - 1])
             }

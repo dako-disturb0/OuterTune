@@ -278,11 +278,9 @@ class MusicService : MediaLibraryService(),
         // Keep a connected controller so that notification works
         val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
         val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
-        controllerFuture.addListener({
-            runCatching { controllerFuture.get() }
-        }, MoreExecutors.directExecutor())
+        controllerFuture.addListener({ controllerFuture.get() }, MoreExecutors.directExecutor())
 
-        connectivityManager = getSystemService() ?: throw IllegalStateException("ConnectivityManager not available")
+        connectivityManager = getSystemService()!!
 
         currentSong.collect(scope) {
             updateNotification()
@@ -483,9 +481,8 @@ class MusicService : MediaLibraryService(),
                 if ((title == null) && initialStatus.title != null) {
                     queueTitle = initialStatus.title
 
-                    val safeQ = q
-                    if (preloadItem != null && safeQ != null) {
-                        queueBoard.value.renameQueue(safeQ, queueTitle)
+                    if (preloadItem != null && q != null) {
+                        queueBoard.value.renameQueue(q!!, queueTitle)
                     }
                 }
 
@@ -530,10 +527,9 @@ class MusicService : MediaLibraryService(),
 
                 // when enqueuing next when player isn't active, play as a new song
                 if (items.isNotEmpty()) {
-                    val firstItem = items.firstOrNull()
                     playQueue(
                         ListQueue(
-                            title = firstItem?.mediaMetadata?.title?.toString() ?: "",
+                            title = items.first().mediaMetadata.title.toString(),
                             items = items.mapNotNull { it.metadata }
                         )
                     )
@@ -600,10 +596,8 @@ class MusicService : MediaLibraryService(),
 
     suspend fun saveQueueToDisk(currentPosition: Long) {
         val data = queueBoard.value.getAllQueues()
-        data.lastOrNull()?.lastSongPos = currentPosition
-        if (data.isNotEmpty()) {
-            database.updateAllQueues(data)
-        }
+        data.last().lastSongPos = currentPosition
+        database.updateAllQueues(data)
     }
 
 
@@ -752,11 +746,11 @@ class MusicService : MediaLibraryService(),
                     FormatEntity(
                         id = mediaId,
                         itag = format.itag,
-                        mimeType = format.mimeType.split(";").firstOrNull() ?: "",
-                        codecs = format.mimeType.split("codecs=").getOrNull(1)?.removeSurrounding("\"") ?: "",
+                        mimeType = format.mimeType.split(";")[0],
+                        codecs = format.mimeType.split("codecs=")[1].removeSurrounding("\""),
                         bitrate = format.bitrate,
                         sampleRate = format.audioSampleRate,
-                        contentLength = format.contentLength ?: 0L,
+                        contentLength = format.contentLength!!,
                         loudnessDb = playbackData.audioConfig?.loudnessDb,
                         playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl
                     )
@@ -975,12 +969,10 @@ class MusicService : MediaLibraryService(),
                 val continuation = null // playlistId.substringAfter("\n")
                 val yq = YouTubeQueue(WatchEndpoint(endpoint, continuation))
                 val mediaItems = yq.nextPage()
-                if (mediaItems.isNotEmpty()) {
-                    q?.playlistId = mediaItems.takeLast(4).shuffled().first().id // yq.getContinuationEndpoint()
-                    Log.d(TAG, "onMediaItemTransition: Got ${mediaItems.size} songs from radio")
-                    if (player.playbackState != STATE_IDLE && songCount > 1) { // initial radio loading is handled by playQueue()
-                        queueBoard.value.enqueueEnd(mediaItems.drop(1))
-                    }
+                q.playlistId = mediaItems.takeLast(4).shuffled().first().id // yq.getContinuationEndpoint()
+                Log.d(TAG, "onMediaItemTransition: Got ${mediaItems.size} songs from radio")
+                if (player.playbackState != STATE_IDLE && songCount > 1) { // initial radio loading is handled by playQueue()
+                    queueBoard.value.enqueueEnd(mediaItems.drop(1))
                 }
             }
         }

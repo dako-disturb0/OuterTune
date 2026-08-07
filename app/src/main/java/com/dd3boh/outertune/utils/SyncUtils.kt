@@ -43,7 +43,6 @@ import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.utils.completed
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -190,8 +189,12 @@ class SyncUtils @Inject constructor(
                     .filterNot { localSong -> remoteSongs.any { it.id == localSong.id } }
 
                 // Unlike local songs in the database
-                songsToUnlike.forEach { song ->
-                    database.update(song.song.localToggleLike())
+                runBlocking {
+                    songsToUnlike.forEach { song ->
+                        launch(Dispatchers.IO) {
+                            database.update(song.song.localToggleLike())
+                        }
+                    }
                 }
 
                 // Insert or like songs in the database
@@ -250,21 +253,30 @@ class SyncUtils @Inject constructor(
                     .filterNot { localSong -> remoteSongs.any { it.id == localSong.id } }
 
                 // Remove local songs from the database
-                songsToRemoveFromLibrary.forEach { song ->
-                    database.update(song.song.toggleLibrary())
+                runBlocking {
+                    songsToRemoveFromLibrary.forEach { song ->
+                        launch(Dispatchers.IO) {
+                            database.update(song.song.toggleLibrary())
+                        }
+                    }
                 }
             }
 
             // Inset or mark songs to library
-            remoteSongs.forEach { song ->
-                val dbSong = database.song(song.id).firstOrNull()
-                database.transaction {
-                    if (dbSong == null) {
-                        insert(song.toMediaMetadata(), SongEntity::toggleLibrary)
-                    } else if (dbSong.song.inLibrary == null) {
-                        update(dbSong.song.toggleLibrary())
+            runBlocking {
+                val jobs = remoteSongs.map { song ->
+                    launch(Dispatchers.IO) {
+                        val dbSong = database.song(song.id).firstOrNull()
+                        database.transaction {
+                            if (dbSong == null) {
+                                insert(song.toMediaMetadata(), SongEntity::toggleLibrary)
+                            } else if (dbSong.song.inLibrary == null) {
+                                update(dbSong.song.toggleLibrary())
+                            }
+                        }
                     }
                 }
+                jobs.joinAll()
             }
         } finally {
             context.dataStore.edit { settings ->
@@ -310,21 +322,29 @@ class SyncUtils @Inject constructor(
                     .filterNot { localAlbum -> remoteAlbums.any { it.id == localAlbum.id } }
 
                 // Remove albums from local database
-                albumsToRemoveFromLibrary.forEach { album ->
-                    database.update(album.album.localToggleLike())
+                runBlocking {
+                    albumsToRemoveFromLibrary.forEach { album ->
+                        launch(Dispatchers.IO) {
+                            database.update(album.album.localToggleLike())
+                        }
+                    }
                 }
             }
 
             // Add or mark albums in local database
-            remoteAlbums.forEach { remoteAlbum ->
-                val localAlbum = database.album(remoteAlbum.id).firstOrNull()
-                if (localAlbum == null) {
-                    database.insert(remoteAlbum)
-                    database.album(remoteAlbum.id).firstOrNull()?.let {
-                        database.update(it.album.localToggleLike())
+            runBlocking {
+                remoteAlbums.forEach { remoteAlbum ->
+                    launch(Dispatchers.IO) {
+                        val localAlbum = database.album(remoteAlbum.id).firstOrNull()
+                        if (localAlbum == null) {
+                            database.insert(remoteAlbum)
+                            database.album(remoteAlbum.id).firstOrNull()?.let {
+                                database.update(it.album.localToggleLike())
+                            }
+                        } else if (localAlbum.album.bookmarkedAt == null) {
+                            database.update(localAlbum.album.localToggleLike())
+                        }
                     }
-                } else if (localAlbum.album.bookmarkedAt == null) {
-                    database.update(localAlbum.album.localToggleLike())
                 }
             }
         } finally {
@@ -384,29 +404,37 @@ class SyncUtils @Inject constructor(
                     .filterNot { localArtist -> likedArtists.any { it.id == localArtist.id } }
 
                 // Remove local artists from the database
-                artistsToRemoveFromSubscriptions.forEach { artist ->
-                    database.update(artist.artist.localToggleLike())
+                runBlocking {
+                    artistsToRemoveFromSubscriptions.forEach { artist ->
+                        launch(Dispatchers.IO) {
+                            database.update(artist.artist.localToggleLike())
+                        }
+                    }
                 }
             }
 
             // Add or mark artists in the database
-            remoteArtists.forEach { remoteArtist ->
-                val localArtist = database.artist(remoteArtist.id).firstOrNull()
-                val isLikedArtist = likedArtists.contains(remoteArtist)
+            runBlocking {
+                remoteArtists.forEach { remoteArtist ->
+                    launch(Dispatchers.IO) {
+                        val localArtist = database.artist(remoteArtist.id).firstOrNull()
+                        val isLikedArtist = likedArtists.contains(remoteArtist)
 
-                database.transaction {
-                    if (localArtist == null) {
-                        insert(
-                            ArtistEntity(
-                                id = remoteArtist.id,
-                                name = remoteArtist.title,
-                                thumbnailUrl = remoteArtist.thumbnail,
-                                channelId = remoteArtist.channelId,
-                                bookmarkedAt = if (isLikedArtist) LocalDateTime.now() else null
-                            )
-                        )
-                    } else if (isLikedArtist && localArtist.artist.bookmarkedAt == null) {
-                        update(localArtist.artist.localToggleLike())
+                        database.transaction {
+                            if (localArtist == null) {
+                                insert(
+                                    ArtistEntity(
+                                        id = remoteArtist.id,
+                                        name = remoteArtist.title,
+                                        thumbnailUrl = remoteArtist.thumbnail,
+                                        channelId = remoteArtist.channelId,
+                                        bookmarkedAt = if (isLikedArtist) LocalDateTime.now() else null
+                                    )
+                                )
+                            } else if (localArtist.artist.bookmarkedAt == null && isLikedArtist) {
+                                update(localArtist.artist.localToggleLike())
+                            }
+                        }
                     }
                 }
             }
@@ -460,43 +488,51 @@ class SyncUtils @Inject constructor(
                         .filterNot { localPlaylist -> remotePlaylists.any { it.id == localPlaylist.playlist.browseId } }
 
                     // Remove playlists from the database
-                    playlistsToRemove.forEach { playlist ->
-                        database.update(playlist.playlist.localToggleLike())
+                    runBlocking {
+                        playlistsToRemove.forEach { playlist ->
+                            launch(Dispatchers.IO) {
+                                database.update(playlist.playlist.localToggleLike())
+                            }
+                        }
                     }
                 }
 
                 // Add or update playlists in the database
-                remotePlaylists.forEach { remotePlaylist ->
-                    // forcefully assign isEditable. These playlists are at mercy of YouTube
-                    var localPlaylist =
-                        localPlaylists.find { remotePlaylist.id == it.playlist.browseId }?.playlist
-                            ?.copy(isEditable = remotePlaylist.isEditable)
-                    if (localPlaylist == null) {
-                        localPlaylist = PlaylistEntity(
-                            name = remotePlaylist.title,
-                            browseId = remotePlaylist.id,
-                            isEditable = remotePlaylist.isEditable,
-                            bookmarkedAt = LocalDateTime.now(),
-                            thumbnailUrl = remotePlaylist.thumbnail,
-                            remoteSongCount = remotePlaylist.songCountText?.let {
-                                Regex("""\d+""").find(it)?.value?.toIntOrNull()
-                            },
-                            playEndpointParams = remotePlaylist.playEndpoint?.params,
-                            shuffleEndpointParams = remotePlaylist.shuffleEndpoint?.params,
-                            radioEndpointParams = remotePlaylist.radioEndpoint?.params
-                        )
-                        database.insert(localPlaylist)
-                    } else {
-                        database.update(localPlaylist, remotePlaylist)
-                    }
+                runBlocking {
+                    remotePlaylists.forEach { remotePlaylist ->
+                        launch(Dispatchers.IO) {
+                            // forcefully assign isEditable. These playlists are at mercy of YouTube
+                            var localPlaylist =
+                                localPlaylists.find { remotePlaylist.id == it.playlist.browseId }?.playlist
+                                    ?.copy(isEditable = remotePlaylist.isEditable)
+                            if (localPlaylist == null) {
+                                localPlaylist = PlaylistEntity(
+                                    name = remotePlaylist.title,
+                                    browseId = remotePlaylist.id,
+                                    isEditable = remotePlaylist.isEditable,
+                                    bookmarkedAt = LocalDateTime.now(),
+                                    thumbnailUrl = remotePlaylist.thumbnail,
+                                    remoteSongCount = remotePlaylist.songCountText?.let {
+                                        Regex("""\d+""").find(it)?.value?.toIntOrNull()
+                                    },
+                                    playEndpointParams = remotePlaylist.playEndpoint?.params,
+                                    shuffleEndpointParams = remotePlaylist.shuffleEndpoint?.params,
+                                    radioEndpointParams = remotePlaylist.radioEndpoint?.params
+                                )
+                                database.insert(localPlaylist)
+                            } else {
+                                database.update(localPlaylist, remotePlaylist)
+                            }
 
-                    // Fetch the playlist again after potential insertion/update
-                    val updatedPlaylist =
-                        database.playlistByBrowseId(remotePlaylist.id).firstOrNull()
-                    updatedPlaylist?.let {
-                        val playlistSongMaps = database.songMapsToPlaylist(updatedPlaylist.id)
-                        if (updatedPlaylist.playlist.isEditable || playlistSongMaps.isNotEmpty()) {
-                            syncPlaylist(remotePlaylist.id, updatedPlaylist.id)
+                            // Fetch the playlist again after potential insertion/update
+                            val updatedPlaylist =
+                                database.playlistByBrowseId(remotePlaylist.id).firstOrNull()
+                            updatedPlaylist?.let {
+                                val playlistSongMaps = database.songMapsToPlaylist(updatedPlaylist.id)
+                                if (updatedPlaylist.playlist.isEditable || playlistSongMaps.isNotEmpty()) {
+                                    syncPlaylist(remotePlaylist.id, updatedPlaylist.id)
+                                }
+                            }
                         }
                     }
                 }
@@ -520,21 +556,25 @@ class SyncUtils @Inject constructor(
                 return
             }
 
-            database.transaction {
-                clearPlaylist(playlistId)
-                val songEntities = playlistPage.songs
-                    .map(SongItem::toMediaMetadata)
-                    .onEach { insert(it) }
+            runBlocking {
+                launch(Dispatchers.IO) {
+                    database.transaction {
+                        clearPlaylist(playlistId)
+                        val songEntities = playlistPage.songs
+                            .map(SongItem::toMediaMetadata)
+                            .onEach { insert(it) }
 
-                val playlistSongMaps = songEntities.mapIndexed { position, song ->
-                    PlaylistSongMap(
-                        songId = song.id,
-                        playlistId = playlistId,
-                        position = position,
-                        setVideoId = song.setVideoId
-                    )
+                        val playlistSongMaps = songEntities.mapIndexed { position, song ->
+                            PlaylistSongMap(
+                                songId = song.id,
+                                playlistId = playlistId,
+                                position = position,
+                                setVideoId = song.setVideoId
+                            )
+                        }
+                        playlistSongMaps.forEach { insert(it) }
+                    }
                 }
-                playlistSongMaps.forEach { insert(it) }
             }
         }
     }
@@ -559,8 +599,13 @@ class SyncUtils @Inject constructor(
             YouTube.libraryRecentActivity().onSuccess { page ->
                 val recentActivity = page.items.take(9).drop(1)
 
-                database.clearRecentActivity()
-                recentActivity.reversed().forEach { database.insertRecentActivityItem(it) }
+                runBlocking {
+                    launch(Dispatchers.IO) {
+                        database.clearRecentActivity()
+
+                        recentActivity.reversed().forEach { database.insertRecentActivityItem(it) }
+                    }
+                }
             }
         } finally {
             context.dataStore.edit { settings ->
@@ -578,7 +623,7 @@ class SyncUtils @Inject constructor(
         )
 
         val remote = mutableListOf<T>()
-        coroutineScope {
+        runBlocking {
             val fetchJobs = browseIds.map { (browseId, tab) ->
                 async {
                     YouTube.library(browseId, tab).completed().onSuccess { page ->

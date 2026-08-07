@@ -17,7 +17,7 @@ import javax.inject.Inject
 class ArtistItemsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val browseId = savedStateHandle.get<String>("browseId") ?: ""
+    private val browseId = savedStateHandle.get<String>("browseId")!!
     private val params = savedStateHandle.get<String>("params")
 
     val title = MutableStateFlow("")

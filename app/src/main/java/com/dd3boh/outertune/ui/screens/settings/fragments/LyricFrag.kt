@@ -66,13 +66,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.EnableBetterLyricsKey
 import com.dd3boh.outertune.constants.EnableKugouKey
 import com.dd3boh.outertune.constants.EnableLrcLibKey
-import com.dd3boh.outertune.constants.EnableMegalobizKey
-import com.dd3boh.outertune.constants.EnablePaxsenixAppleMusicKey
 import com.dd3boh.outertune.constants.EnablePaxsenixKey
-import com.dd3boh.outertune.constants.EnablePaxsenixMusixmatchKey
-import com.dd3boh.outertune.constants.EnablePaxsenixNeteaseKey
-import com.dd3boh.outertune.constants.EnablePaxsenixSpotifyKey
-import com.dd3boh.outertune.constants.EnablePaxsenixYouTubeKey
 import com.dd3boh.outertune.constants.EnableSimpMusicKey
 import com.dd3boh.outertune.constants.LyricClickable
 import com.dd3boh.outertune.constants.LyricFontSizeKey
@@ -230,15 +224,9 @@ private data class ProviderItem(
 fun ColumnScope.LyricSourceFrag() {
     val (enableBetterLyrics, onEnableBetterLyricsChange) = rememberPreference(key = EnableBetterLyricsKey, defaultValue = true)
     val (enablePaxsenix, onEnablePaxsenixChange) = rememberPreference(key = EnablePaxsenixKey, defaultValue = true)
-    val (enablePaxsenixAppleMusic, onEnablePaxsenixAppleMusicChange) = rememberPreference(key = EnablePaxsenixAppleMusicKey, defaultValue = true)
-    val (enablePaxsenixSpotify, onEnablePaxsenixSpotifyChange) = rememberPreference(key = EnablePaxsenixSpotifyKey, defaultValue = true)
-    val (enablePaxsenixMusixmatch, onEnablePaxsenixMusixmatchChange) = rememberPreference(key = EnablePaxsenixMusixmatchKey, defaultValue = true)
-    val (enablePaxsenixNetease, onEnablePaxsenixNeteaseChange) = rememberPreference(key = EnablePaxsenixNeteaseKey, defaultValue = true)
-    val (enablePaxsenixYouTube, onEnablePaxsenixYouTubeChange) = rememberPreference(key = EnablePaxsenixYouTubeKey, defaultValue = true)
     val (enableSimpMusic, onEnableSimpMusicChange) = rememberPreference(key = EnableSimpMusicKey, defaultValue = true)
     val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
     val (enableLrcLib, onEnableLrcLibChange) = rememberPreference(key = EnableLrcLibKey, defaultValue = true)
-    val (enableMegalobiz, onEnableMegalobizChange) = rememberPreference(key = EnableMegalobizKey, defaultValue = true)
     val (preferLocalLyric, onPreferLocalLyric) = rememberPreference(LyricSourcePrefKey, defaultValue = true)
     val (providerOrder, onProviderOrderChange) = rememberPreference(
         LyricsProviderOrderKey,
@@ -256,26 +244,17 @@ fun ColumnScope.LyricSourceFrag() {
         }
     }
 
-    val providerItems = remember(
-        savedOrder, enableBetterLyrics, enablePaxsenix, enablePaxsenixAppleMusic,
-        enablePaxsenixSpotify, enablePaxsenixMusixmatch, enablePaxsenixNetease,
-        enablePaxsenixYouTube, enableSimpMusic, enableKugou, enableLrcLib, enableMegalobiz
-    ) {
+    val providerItems = remember(savedOrder, enableBetterLyrics, enablePaxsenix, enableSimpMusic, enableKugou, enableLrcLib) {
         mutableStateListOf(*savedOrder.map { name ->
             ProviderItem(
                 name = name,
                 enabledKey = name,
                 enabled = when (name) {
-                    "Paxsenix: Apple Music", "Paxsenix (Apple Music)" -> enablePaxsenixAppleMusic && enablePaxsenix
-                    "Paxsenix: Spotify" -> enablePaxsenixSpotify && enablePaxsenix
-                    "Paxsenix: Musixmatch" -> enablePaxsenixMusixmatch && enablePaxsenix
-                    "Paxsenix: NetEase" -> enablePaxsenixNetease && enablePaxsenix
-                    "Paxsenix: YouTube" -> enablePaxsenixYouTube && enablePaxsenix
+                    "Paxsenix (Apple Music)" -> enablePaxsenix
                     "BetterLyrics" -> enableBetterLyrics
                     "SimpMusic" -> enableSimpMusic
                     "Kugou" -> enableKugou
                     "LrcLib" -> enableLrcLib
-                    "Megalobiz" -> enableMegalobiz
                     else -> true
                 }
             )
@@ -489,7 +468,6 @@ private fun PaxsenixStatsCard(
                 }
             }
 
-            val currentStats = stats
             when {
                 error != null -> {
                     Text(
@@ -499,8 +477,8 @@ private fun PaxsenixStatsCard(
                     )
                 }
 
-                currentStats != null -> {
-                    val s = currentStats
+                stats != null -> {
+                    val s = stats!!
 
                     // Overall success rate
                     Row(
@@ -619,11 +597,11 @@ private fun StatChip(label: String, value: String) {
 @Composable
 fun ColumnScope.LyricAdvancedFrag() {
     val (lyricUpdateSpeed, onLyricsUpdateSpeedChange) = rememberEnumPreference(LyricUpdateSpeed, Speed.MEDIUM)
-    val (lyricsFancy, onLyricsFancyChange) = rememberPreference(LyricKaraokeEnable, true)
+    val (lyricsFancy, onLyricsFancyChange) = rememberPreference(LyricKaraokeEnable, false)
     val (syncedLyricsClickable, onSyncedLyricsClickable) = rememberPreference(LyricClickable, defaultValue = true)
     val (preloadKaraokeLyrics, onPreloadKaraokeLyricsChange) = rememberPreference(
         com.dd3boh.outertune.constants.PreloadKaraokeLyricsKey,
-        defaultValue = true
+        defaultValue = false
     )
 
     ElevatedCard(

@@ -201,15 +201,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         val playlistSongMaps = mutableListOf<PlaylistSongMap>()
         db.query("SELECT * FROM playlist_song".toSQLiteQuery()).use { cursor ->
             while (cursor.moveToNext()) {
-                playlistMap[cursor.getInt(1)]?.let { playlistId ->
-                    playlistSongMaps.add(
-                        PlaylistSongMap(
-                            playlistId = playlistId,
-                            songId = cursor.getString(2),
-                            position = cursor.getInt(3)
-                        )
+                playlistSongMaps.add(
+                    PlaylistSongMap(
+                        playlistId = playlistMap[cursor.getInt(1)]!!,
+                        songId = cursor.getString(2),
+                        position = cursor.getInt(3)
                     )
-                }
+                )
             }
         }
         // ensure we have continuous playlist song position
@@ -217,9 +215,8 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         val playlistSongCount = mutableMapOf<String, Int>()
         playlistSongMaps.map { map ->
             if (map.playlistId !in playlistSongCount) playlistSongCount[map.playlistId] = 0
-            val currentCount = playlistSongCount[map.playlistId] ?: 0
-            map.copy(position = currentCount).also {
-                playlistSongCount[map.playlistId] = currentCount + 1
+            map.copy(position = playlistSongCount[map.playlistId]!!).also {
+                playlistSongCount[map.playlistId] = playlistSongCount[map.playlistId]!! + 1
             }
         }
         val songs = mutableListOf<OldSongEntity>()
@@ -239,15 +236,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                             .toLocalDateTime()
                     )
                 )
-                artistMap[cursor.getInt(2)]?.let { artistId ->
-                    songArtistMaps.add(
-                        SongArtistMap(
-                            songId = songId,
-                            artistId = artistId,
-                            position = 0
-                        )
+                songArtistMaps.add(
+                    SongArtistMap(
+                        songId = songId,
+                        artistId = artistMap[cursor.getInt(2)]!!,
+                        position = 0
                     )
-                }
+                )
             }
         }
         db.execSQL("DROP TABLE IF EXISTS song")
@@ -438,8 +433,8 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
             for (s in songs) {
                 val match = shuffled.find { it.song == s.song }
 
-                match?.let {
-                    s.shuffleIndex = it.index
+                match.let {
+                    s.shuffleIndex = it?.index!!
                     tempResult.add(s)
                     shuffled.remove(match) // remove from shuffled, so duplicates are handled
                 }

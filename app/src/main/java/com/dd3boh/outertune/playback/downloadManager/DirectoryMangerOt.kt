@@ -27,19 +27,18 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
         this.context = context
         this.dir = dir
         try {
-            val initMainDir = documentFileFromUri(context, dir)
-            mainDir = initMainDir
-            if (initMainDir == null || !initMainDir.isDirectory) {
+            mainDir = documentFileFromUri(context, dir)
+            if (mainDir == null || !mainDir!!.isDirectory) {
                 throw IOException("Invalid directory")
             }
 
             // TODO: .nomedia for downloads folder (permission denied)
-//            if (!initMainDir.listFiles().any { it.name == ".nomedia" }) {
+//            if (!mainDir!!.listFiles().any { it.name == ".nomedia" }) {
 //                documentFileFromUri(context, dir)?.createFile("audio/mka", ".nomedia")
 //            }
 
             val newAllDirs = mutableListOf<DocumentFile>()
-            newAllDirs.add(initMainDir)
+            newAllDirs.add(mainDir!!)
             if (extraDirs.isNotEmpty()) {
                 newAllDirs.addAll(
                     documentFileFromUri(context, extraDirs.filterNot { it == dir }).filter { it.isDirectory }
@@ -48,10 +47,9 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
             allDirs = newAllDirs.toList()
             Log.i(TAG, "Download manager initialized successfully. ${allDirs.size}")
         } catch (e: Exception) {
-            val caughtMainDir = mainDir
-            if (caughtMainDir == null) {
+            if (mainDir == null) {
                 Log.w(TAG, "Failed to initiate download manager: No directory provided")
-            } else if (!caughtMainDir.isDirectory) {
+            } else if (!mainDir!!.isDirectory) {
                 Log.w(TAG, "Failed to initiate download manager: Not a valid directory")
             } else {
                 Log.e(TAG, "Failed to initiate download manager: " + e.message)
@@ -92,7 +90,7 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
     }
 
     fun isExists(mediaId: String): DocumentFile? {
-        return availableFiles.find { (it as? TreeDocumentFileOt)?.id == mediaId }
+        return availableFiles.find { (it as TreeDocumentFileOt).id == mediaId }
     }
 
     fun getFilePathIfExists(mediaId: String): Uri? {
@@ -130,9 +128,9 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
     }
 
     fun getMainDlStorageUsage(): Long {
-        val currentMainDir = mainDir ?: return -1L
+        if (mainDir == null) return -1L
         val result = ArrayList<DocumentFile>()
-        scanDfRecursive(currentMainDir, result, true)
+        scanDfRecursive(mainDir!!, result, true)
 
         return result.filter { it.name != null }.sumOf { it.length() }
     }

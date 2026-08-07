@@ -15,9 +15,6 @@ import android.util.Log
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import androidx.datastore.preferences.core.edit
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -55,9 +52,11 @@ import com.zionhuang.innertube.models.YouTubeLocale
 import com.zionhuang.kugou.KuGou
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.net.Proxy
@@ -94,13 +93,10 @@ class App : Application(), SingletonImageLoader.Factory {
 
         if (dataStore[ProxyEnabledKey] == true) {
             try {
-                val proxyUrl = dataStore[ProxyUrlKey]
-                if (proxyUrl != null) {
-                    YouTube.proxy = Proxy(
-                        dataStore[ProxyTypeKey].toEnum(defaultValue = Proxy.Type.HTTP),
-                        proxyUrl.toInetSocketAddress()
-                    )
-                }
+                YouTube.proxy = Proxy(
+                    dataStore[ProxyTypeKey].toEnum(defaultValue = Proxy.Type.HTTP),
+                    dataStore[ProxyUrlKey]!!.toInetSocketAddress()
+                )
             } catch (e: Exception) {
                 Toast.makeText(this, "Failed to parse proxy url.", LENGTH_SHORT).show()
                 reportException(e)
@@ -118,31 +114,23 @@ class App : Application(), SingletonImageLoader.Factory {
         }
 
         GlobalScope.launch {
-            try {
-                dataStore.data
-                    .map { it[VisitorDataKey] }
-                    .distinctUntilChanged()
-                    .collect { visitorData ->
-                        try {
-                            YouTube.visitorData = visitorData
-                                ?.takeIf { it != "null" } // Previously visitorData was sometimes saved as "null" due to a bug
-                                ?: YouTube.visitorData().onFailure {
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(this@App, "Failed to get visitorData.", LENGTH_SHORT).show()
-                                    }
-                                    reportException(it)
-                                }.getOrNull()?.also { newVisitorData ->
-                                    dataStore.edit { settings ->
-                                        settings[VisitorDataKey] = newVisitorData
-                                    }
-                                }
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Failed to process visitorData", e)
+            dataStore.data
+                .map { it[VisitorDataKey] }
+                .distinctUntilChanged()
+                .collect { visitorData ->
+                    YouTube.visitorData = visitorData
+                        ?.takeIf { it != "null" } // Previously visitorData was sometimes saved as "null" due to a bug
+                        ?: YouTube.visitorData().onFailure {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@App, "Failed to get visitorData.", LENGTH_SHORT).show()
+                            }
+                            reportException(it)
+                        }.getOrNull()?.also { newVisitorData ->
+                            dataStore.edit { settings ->
+                                settings[VisitorDataKey] = newVisitorData
+                            }
                         }
-                    }
-            } catch (e: Exception) {
-                Log.e(TAG, "visitorData launch error", e)
-            }
+                }
         }
         GlobalScope.launch {
             dataStore.data
@@ -225,24 +213,18 @@ class App : Application(), SingletonImageLoader.Factory {
     }
 
     companion object {
-        private const val TAG = "App"
-
         lateinit var instance: App
             private set
 
         fun forgetAccount(context: Context) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    context.dataStore.edit { settings ->
-                        settings.remove(InnerTubeCookieKey)
-                        settings.remove(VisitorDataKey)
-                        settings.remove(DataSyncIdKey)
-                        settings.remove(AccountNameKey)
-                        settings.remove(AccountEmailKey)
-                        settings.remove(AccountChannelHandleKey)
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to clear account data", e)
+            runBlocking {
+                context.dataStore.edit { settings ->
+                    settings.remove(InnerTubeCookieKey)
+                    settings.remove(VisitorDataKey)
+                    settings.remove(DataSyncIdKey)
+                    settings.remove(AccountNameKey)
+                    settings.remove(AccountEmailKey)
+                    settings.remove(AccountChannelHandleKey)
                 }
             }
         }
