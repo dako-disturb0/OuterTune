@@ -58,7 +58,23 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Brush
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
+import coil3.toBitmap
+import com.dd3boh.outertune.ui.theme.extractGradientColors
+import com.dd3boh.outertune.utils.coilCoroutine
+import kotlinx.coroutines.withContext
+import android.graphics.Bitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -82,6 +98,7 @@ import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.button.IconButton
+import com.dd3boh.outertune.ui.utils.expressiveClickable
 import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -159,7 +176,11 @@ fun MiniPlayer(
                     }
                 }
 
-                IconButton(
+                // Play button with gradient from song image
+                PlayButtonGradient(
+                    playbackState = playbackState,
+                    isPlaying = isPlaying,
+                    mediaMetadata = mediaMetadata,
                     onClick = {
                         if (playerConnection.player.currentMediaItem == null) {
                             queueBoard.setCurrQueue()
@@ -171,20 +192,7 @@ fun MiniPlayer(
                             playerConnection.player.togglePlayPause()
                         }
                     }
-                ) {
-                    androidx.compose.material3.Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (playbackState == Player.STATE_ENDED) Icons.Rounded.Replay else if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            contentDescription = null,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
-                }
+                )
 
                 IconButton(
                     enabled = canSkipNext,
@@ -349,7 +357,7 @@ fun MiniMediaInfo(
                         modifier = Modifier
                             .then(
                                 if (isDynamicMode) Modifier          // expand freely
-                                else Modifier.heightIn(min = 36.dp)  // static: ~3 lines reserved
+                                else Modifier.heightIn(min = 48.dp)  // static: 2 lines reserved
                             )
                     ) {
                         Icon(
@@ -366,7 +374,7 @@ fun MiniMediaInfo(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             // Dynamic: wrap long lines. Static: single line with ellipsis (room already reserved).
-                            maxLines = if (isDynamicMode) Int.MAX_VALUE else 3,
+                            maxLines = if (isDynamicMode) Int.MAX_VALUE else 2,
                             overflow = if (isDynamicMode) TextOverflow.Clip else TextOverflow.Ellipsis,
                             lineHeight = 16.sp,
                         )
@@ -383,12 +391,77 @@ fun MiniMediaInfo(
                             .then(
                                 // Keep height consistent with lyric area when Static mode is on
                                 if (!isDynamicMode && showLyricInMiniPlayer)
-                                    Modifier.heightIn(min = 36.dp)
+                                    Modifier.heightIn(min = 48.dp)
                                 else Modifier
                             )
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PlayButtonGradient(
+    playbackState: Int,
+    isPlaying: Boolean,
+    mediaMetadata: com.dd3boh.outertune.models.MediaMetadata?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val infiniteTransition = rememberInfiniteTransition(label = "gradientButton")
+    val xOffset by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(8000, easing = androidx.compose.animation.core.LinearEasing), repeatMode = RepeatMode.Reverse),
+        label = "xOffset"
+    )
+    val yOffset by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(10000, easing = androidx.compose.animation.core.LinearEasing), repeatMode = RepeatMode.Reverse),
+        label = "yOffset"
+    )
+
+    var gradientColors by remember { mutableStateOf<List<Color>>(emptyList()) }
+    LaunchedEffect(mediaMetadata) {
+        if (mediaMetadata == null) return@LaunchedEffect
+        withContext(coilCoroutine) {
+            val result = context.imageLoader.execute(
+                ImageRequest.Builder(context)
+                    .data(mediaMetadata.getThumbnailModel(100, 100))
+                    .allowHardware(false)
+                    .build()
+            )
+            val bitmap = result.image?.toBitmap()
+            if (bitmap != null) {
+                gradientColors = bitmap.extractGradientColors()
+            }
+        }
+    }
+
+    val colors = if (gradientColors.size >= 2) gradientColors else listOf(
+        MaterialTheme.colorScheme.primary,
+        MaterialTheme.colorScheme.secondary
+    )
+
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .drawWithCache {
+                val start = androidx.compose.ui.geometry.Offset(size.width * xOffset, size.height * (1f - yOffset))
+                val end = androidx.compose.ui.geometry.Offset(size.width * (1f - xOffset), size.height * yOffset)
+                val brush = Brush.linearGradient(colors = colors, start = start, end = end)
+                onDrawBehind { drawRect(brush = brush) }
+            }
+            .expressiveClickable(pressedScale = 0.92f) { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = if (playbackState == Player.STATE_ENDED) Icons.Rounded.Replay else if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+            tint = MaterialTheme.colorScheme.onPrimary,
+            contentDescription = null,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
