@@ -66,7 +66,12 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.EnableBetterLyricsKey
 import com.dd3boh.outertune.constants.EnableKugouKey
 import com.dd3boh.outertune.constants.EnableLrcLibKey
+import com.dd3boh.outertune.constants.EnablePaxsenixAppleMusicKey
 import com.dd3boh.outertune.constants.EnablePaxsenixKey
+import com.dd3boh.outertune.constants.EnablePaxsenixMusixmatchKey
+import com.dd3boh.outertune.constants.EnablePaxsenixNeteaseKey
+import com.dd3boh.outertune.constants.EnablePaxsenixSpotifyKey
+import com.dd3boh.outertune.constants.EnablePaxsenixYouTubeKey
 import com.dd3boh.outertune.constants.EnableSimpMusicKey
 import com.dd3boh.outertune.constants.LyricClickable
 import com.dd3boh.outertune.constants.LyricFontSizeKey
@@ -223,7 +228,12 @@ private data class ProviderItem(
 @Composable
 fun ColumnScope.LyricSourceFrag() {
     val (enableBetterLyrics, onEnableBetterLyricsChange) = rememberPreference(key = EnableBetterLyricsKey, defaultValue = true)
-    val (enablePaxsenix, onEnablePaxsenixChange) = rememberPreference(key = EnablePaxsenixKey, defaultValue = true)
+    val (enablePaxsenixAuto, onEnablePaxsenixAutoChange) = rememberPreference(key = EnablePaxsenixKey, defaultValue = true)
+    val (enablePaxsenixAppleMusic, onEnablePaxsenixAppleMusicChange) = rememberPreference(key = EnablePaxsenixAppleMusicKey, defaultValue = true)
+    val (enablePaxsenixNetease, onEnablePaxsenixNeteaseChange) = rememberPreference(key = EnablePaxsenixNeteaseKey, defaultValue = true)
+    val (enablePaxsenixSpotify, onEnablePaxsenixSpotifyChange) = rememberPreference(key = EnablePaxsenixSpotifyKey, defaultValue = true)
+    val (enablePaxsenixMusixmatch, onEnablePaxsenixMusixmatchChange) = rememberPreference(key = EnablePaxsenixMusixmatchKey, defaultValue = true)
+    val (enablePaxsenixYouTube, onEnablePaxsenixYouTubeChange) = rememberPreference(key = EnablePaxsenixYouTubeKey, defaultValue = true)
     val (enableSimpMusic, onEnableSimpMusicChange) = rememberPreference(key = EnableSimpMusicKey, defaultValue = true)
     val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
     val (enableLrcLib, onEnableLrcLibChange) = rememberPreference(key = EnableLrcLibKey, defaultValue = true)
@@ -244,13 +254,22 @@ fun ColumnScope.LyricSourceFrag() {
         }
     }
 
-    val providerItems = remember(savedOrder, enableBetterLyrics, enablePaxsenix, enableSimpMusic, enableKugou, enableLrcLib) {
+    val providerItems = remember(
+        savedOrder, enableBetterLyrics, enablePaxsenixAuto, enablePaxsenixAppleMusic,
+        enablePaxsenixNetease, enablePaxsenixSpotify, enablePaxsenixMusixmatch,
+        enablePaxsenixYouTube, enableSimpMusic, enableKugou, enableLrcLib
+    ) {
         mutableStateListOf(*savedOrder.map { name ->
             ProviderItem(
                 name = name,
                 enabledKey = name,
                 enabled = when (name) {
-                    "Paxsenix (Apple Music)" -> enablePaxsenix
+                    "Paxsenix: Apple Music" -> enablePaxsenixAppleMusic
+                    "Paxsenix: NetEase" -> enablePaxsenixNetease
+                    "Paxsenix: Spotify" -> enablePaxsenixSpotify
+                    "Paxsenix: Musixmatch" -> enablePaxsenixMusixmatch
+                    "Paxsenix: YouTube" -> enablePaxsenixYouTube
+                    "Paxsenix (Auto)" -> enablePaxsenixAuto
                     "BetterLyrics" -> enableBetterLyrics
                     "SimpMusic" -> enableSimpMusic
                     "Kugou" -> enableKugou
@@ -366,13 +385,48 @@ fun ColumnScope.LyricSourceFrag() {
 
     Spacer(modifier = Modifier.height(8.dp))
 
-    // Toggle switches (in original order)
+    // Toggle switches for split Paxsenix providers
     SwitchPreference(
-        title = { Text(stringResource(R.string.enable_paxsenix)) },
-        description = stringResource(R.string.enable_paxsenix_description),
+        title = { Text("Paxsenix: Apple Music") },
+        description = "Fetches word-by-word TTML lyrics via Apple Music catalog",
         icon = { Icon(Icons.Rounded.Lyrics, null) },
-        checked = enablePaxsenix,
-        onCheckedChange = onEnablePaxsenixChange
+        checked = enablePaxsenixAppleMusic,
+        onCheckedChange = onEnablePaxsenixAppleMusicChange
+    )
+    SwitchPreference(
+        title = { Text("Paxsenix: NetEase") },
+        description = "Fetches NetEase synced and karaoke lyrics",
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = enablePaxsenixNetease,
+        onCheckedChange = onEnablePaxsenixNeteaseChange
+    )
+    SwitchPreference(
+        title = { Text("Paxsenix: Spotify") },
+        description = "Fetches Spotify synced lyrics",
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = enablePaxsenixSpotify,
+        onCheckedChange = onEnablePaxsenixSpotifyChange
+    )
+    SwitchPreference(
+        title = { Text("Paxsenix: Musixmatch") },
+        description = "Fetches Musixmatch word and synced lyrics",
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = enablePaxsenixMusixmatch,
+        onCheckedChange = onEnablePaxsenixMusixmatchChange
+    )
+    SwitchPreference(
+        title = { Text("Paxsenix: YouTube") },
+        description = "Fetches YouTube synced lyrics",
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = enablePaxsenixYouTube,
+        onCheckedChange = onEnablePaxsenixYouTubeChange
+    )
+    SwitchPreference(
+        title = { Text("Paxsenix (Auto)") },
+        description = "Automatic fallback across all Paxsenix sources",
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = enablePaxsenixAuto,
+        onCheckedChange = onEnablePaxsenixAutoChange
     )
     SwitchPreference(
         title = { Text(stringResource(R.string.enable_betterlyrics)) },
@@ -597,11 +651,10 @@ private fun StatChip(label: String, value: String) {
 @Composable
 fun ColumnScope.LyricAdvancedFrag() {
     val (lyricUpdateSpeed, onLyricsUpdateSpeedChange) = rememberEnumPreference(LyricUpdateSpeed, Speed.MEDIUM)
-    val (lyricsFancy, onLyricsFancyChange) = rememberPreference(LyricKaraokeEnable, false)
     val (syncedLyricsClickable, onSyncedLyricsClickable) = rememberPreference(LyricClickable, defaultValue = true)
     val (preloadKaraokeLyrics, onPreloadKaraokeLyricsChange) = rememberPreference(
         com.dd3boh.outertune.constants.PreloadKaraokeLyricsKey,
-        defaultValue = false
+        defaultValue = true
     )
 
     ElevatedCard(
@@ -627,14 +680,6 @@ fun ColumnScope.LyricAdvancedFrag() {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth()
     ) {
-        SwitchPreference(
-            title = { Text(stringResource(R.string.lyrics_karaoke_title)) },
-            description = stringResource(R.string.lyrics_karaoke_description),
-            icon = { Icon(Icons.Rounded.TextRotationAngledown, null) },
-            checked = lyricsFancy,
-            onCheckedChange = onLyricsFancyChange
-        )
-
         ListPreference(
             title = { Text(stringResource(R.string.lyrics_karaoke_hz_title)) },
             icon = { Icon(Icons.Rounded.Speed, null) },
@@ -648,7 +693,7 @@ fun ColumnScope.LyricAdvancedFrag() {
                     Speed.FAST -> stringResource(R.string.speed_fast)
                 }
             },
-            isEnabled = lyricsFancy
+            isEnabled = true
         )
     }
 }

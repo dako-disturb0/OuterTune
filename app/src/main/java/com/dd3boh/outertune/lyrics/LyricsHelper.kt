@@ -42,6 +42,11 @@ class LyricsHelper @Inject constructor(
      * Paxsenix (Apple Music) is first to prioritize word-by-word TTML lyrics.
      */
     val allProviders: List<LyricsProvider> = listOf(
+        PaxsenixAppleMusicLyricsProvider,
+        PaxsenixNeteaseLyricsProvider,
+        PaxsenixSpotifyLyricsProvider,
+        PaxsenixMusixmatchLyricsProvider,
+        PaxsenixYouTubeLyricsProvider,
         PaxsenixLyricsProvider,
         BetterLyricsProvider,
         SimpMusicLyricsProvider,
@@ -368,7 +373,12 @@ class LyricsHelper @Inject constructor(
          * Default provider order (names must match provider.name values exactly)
          */
         val DEFAULT_PROVIDER_ORDER = listOf(
-            "Paxsenix (Apple Music)",
+            "Paxsenix: Apple Music",
+            "Paxsenix: NetEase",
+            "Paxsenix: Spotify",
+            "Paxsenix: Musixmatch",
+            "Paxsenix: YouTube",
+            "Paxsenix (Auto)",
             "BetterLyrics",
             "SimpMusic",
             "YouTube Subtitle",

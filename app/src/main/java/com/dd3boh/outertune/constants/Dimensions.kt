@@ -23,7 +23,8 @@ const val CONTENT_TYPE_PLAYLIST = 5
 const val CONTENT_TYPE_FOLDER = 6
 
 val NavigationBarHeight = 80.dp
-val MiniPlayerHeight = 80.dp
+val BottomNavHeight = NavigationBarHeight
+val MiniPlayerHeight = 64.dp
 val MinMiniPlayerHeight = 16.dp
 val QueuePeekHeight = 48.dp
 val AppBarHeight = 64.dp

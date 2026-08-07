@@ -43,7 +43,9 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -112,6 +114,7 @@ private const val LYRIC_MODE_STATIC  = "static"
 @Composable
 fun MiniPlayer(
     modifier: Modifier = Modifier,
+    isDocked: Boolean = false,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val queueBoard by playerConnection.queueBoard.collectAsState()
@@ -142,13 +145,20 @@ fun MiniPlayer(
         }
     }
 
+    val playerShape = if (isDocked) {
+        RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+    } else {
+        RoundedCornerShape(20.dp)
+    }
+    val bottomMargin = if (isDocked) 0.dp else 8.dp
+
     androidx.compose.material3.Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = playerShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shadowElevation = 8.dp,
         tonalElevation = 6.dp,
         modifier = modifier
-            .padding(horizontal = 10.dp, vertical = 4.dp)
+            .padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = bottomMargin)
             .fillMaxWidth()
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
     ) {
@@ -176,11 +186,7 @@ fun MiniPlayer(
                     }
                 }
 
-                // Play button with gradient from song image
-                PlayButtonGradient(
-                    playbackState = playbackState,
-                    isPlaying = isPlaying,
-                    mediaMetadata = mediaMetadata,
+                FilledIconButton(
                     onClick = {
                         if (playerConnection.player.currentMediaItem == null) {
                             queueBoard.setCurrQueue()
@@ -191,8 +197,22 @@ fun MiniPlayer(
                         } else {
                             playerConnection.player.togglePlayPause()
                         }
-                    }
-                )
+                    },
+                    shape = CircleShape,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = if (playbackState == Player.STATE_ENDED) Icons.Rounded.Replay
+                        else if (isPlaying) Icons.Rounded.Pause
+                        else Icons.Rounded.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
 
                 IconButton(
                     enabled = canSkipNext,

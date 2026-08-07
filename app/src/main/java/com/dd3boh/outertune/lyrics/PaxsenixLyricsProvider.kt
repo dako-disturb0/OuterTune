@@ -7,7 +7,7 @@ import com.dd3boh.outertune.utils.get
 import com.dd3boh.paxsenix.PaxsenixLyrics
 
 object PaxsenixLyricsProvider : LyricsProvider {
-    override val name = "Paxsenix (Apple Music)"
+    override val name = "Paxsenix (Auto)"
 
     override fun isEnabled(context: Context): Boolean =
         context.dataStore[EnablePaxsenixKey] ?: true

@@ -6,11 +6,15 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -65,10 +70,12 @@ import com.dd3boh.outertune.LocalMenuState
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.BottomNavHeight
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.constants.LocalLibraryEnableKey
+import com.dd3boh.outertune.constants.MiniPlayerHeight
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
@@ -366,52 +373,66 @@ fun HomeScreen(
             )
         }
 
+        val playerAwarePadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+        val layoutDirection = LocalLayoutDirection.current
+        val bottomPadding = MiniPlayerHeight + BottomNavHeight + 16.dp
+
         ScrollToTopManager(navController, lazylistState)
         LazyColumn(
             state = lazylistState,
-            contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
+            contentPadding = PaddingValues(
+                top = playerAwarePadding.calculateTopPadding(),
+                bottom = maxOf(playerAwarePadding.calculateBottomPadding(), bottomPadding),
+                start = playerAwarePadding.calculateStartPadding(layoutDirection),
+                end = playerAwarePadding.calculateEndPadding(layoutDirection)
+            )
         ) {
             item {
-                Row(
-                    modifier = Modifier
-                        .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .fillMaxWidth()
-                        .animateItem()
+                Column(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    NavigationTile(
-                        title = stringResource(R.string.history),
-                        icon = Icons.Rounded.History,
-                        onClick = { navController.navigate("history") },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    NavigationTile(
-                        title = stringResource(R.string.stats),
-                        icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                        onClick = { navController.navigate("stats") },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    if (localLibEnable) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier
+                            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .fillMaxWidth()
+                            .animateItem()
+                    ) {
                         NavigationTile(
-                            title = stringResource(R.string.scanner_local_title),
-                            icon = Icons.Rounded.SdCard,
+                            title = stringResource(R.string.history),
+                            icon = Icons.Rounded.History,
+                            onClick = { navController.navigate("history") },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        NavigationTile(
+                            title = stringResource(R.string.stats),
+                            icon = Icons.AutoMirrored.Rounded.TrendingUp,
+                            onClick = { navController.navigate("stats") },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        if (localLibEnable) {
+                            NavigationTile(
+                                title = stringResource(R.string.scanner_local_title),
+                                icon = Icons.Rounded.SdCard,
+                                onClick = {
+                                    navController.navigate("settings/local")
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        NavigationTile(
+                            title = stringResource(R.string.account),
+                            icon = Icons.Rounded.Person,
                             onClick = {
-                                navController.navigate("settings/local")
+                                navController.navigate("account")
                             },
                             modifier = Modifier.weight(1f)
                         )
                     }
-
-                    NavigationTile(
-                        title = stringResource(R.string.account),
-                        icon = Icons.Rounded.Person,
-                        onClick = {
-                            navController.navigate("account")
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
                 }
             }
 

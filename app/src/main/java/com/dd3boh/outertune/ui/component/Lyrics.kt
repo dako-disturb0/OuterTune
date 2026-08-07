@@ -164,11 +164,10 @@ fun Lyrics(
     LaunchedEffect(lyricsModel) {
         lines.clear()
         lyricsModel?.let { model ->
-            if (isSynced) {
-                val lyrics = lyricsModel as SemanticLyrics.SyncedLyrics
-                lines.addAll(lyrics.text)
+            if (model is SemanticLyrics.SyncedLyrics) {
+                lines.addAll(model.text)
 
-                if (lyricsFancy && lyrics.text.fastAny { it.words != null }) {
+                if (model.text.fastAny { it.words != null }) {
                     lyricRefreshRate = lyricsUpdateSpeed.toLrcRefreshMillis()
                 } else {
                     lyricRefreshRate = Speed.SLOW.toLrcRefreshMillis()

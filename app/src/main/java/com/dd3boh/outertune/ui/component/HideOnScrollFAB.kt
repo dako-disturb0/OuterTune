@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2024 z-huang/InnerTune
- * Copyright (C) 2025 O﻿ute﻿rTu﻿ne Project
+ * Copyright (C) 2025 OuterTune Project
  *
  * SPDX-License-Identifier: GPL-3.0
  *
@@ -30,6 +30,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
+import com.dd3boh.outertune.constants.BottomNavHeight
+import com.dd3boh.outertune.constants.MiniPlayerHeight
 import com.dd3boh.outertune.ui.utils.isScrollingUp
 
 @Composable
@@ -47,11 +49,11 @@ fun BoxScope.HideOnScrollFAB(
             .align(Alignment.BottomEnd)
             .windowInsetsPadding(
                 LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    .only(WindowInsetsSides.Horizontal)
             )
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -77,11 +79,11 @@ fun BoxScope.HideOnScrollFAB(
             .align(Alignment.BottomEnd)
             .windowInsetsPadding(
                 LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    .only(WindowInsetsSides.Horizontal)
             )
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -108,11 +110,11 @@ fun BoxScope.HideOnScrollFAB(
             .align(Alignment.BottomEnd)
             .windowInsetsPadding(
                 LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    .only(WindowInsetsSides.Horizontal)
             )
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -138,11 +140,11 @@ fun BoxScope.HideOnScrollFAB(
             .align(Alignment.BottomEnd)
             .windowInsetsPadding(
                 LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    .only(WindowInsetsSides.Horizontal)
             )
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -168,11 +170,11 @@ fun BoxScope.HideOnScrollFAB(
             .align(Alignment.BottomEnd)
             .windowInsetsPadding(
                 LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    .only(WindowInsetsSides.Horizontal)
             )
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -198,11 +200,11 @@ fun BoxScope.HideOnScrollFAB(
             .align(Alignment.BottomEnd)
             .windowInsetsPadding(
                 LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    .only(WindowInsetsSides.Horizontal)
             )
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
             onClick = onClick
         ) {
             Icon(
