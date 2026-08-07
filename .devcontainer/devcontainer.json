@@ -16,8 +16,7 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "kotlin.languageServer.enabled": true,
-        "terminal.integrated.defaultProfile.linux": "bash"
+        "kotlin.languageServer.enabled": true
       },
       "extensions": [
         "fwcd.kotlin",
@@ -26,6 +25,6 @@
       ]
     }
   },
-  "updateRemoteUserUID": true,
+  "postCreateCommand": "agy --version",
   "remoteUser": "vscode"
 }
