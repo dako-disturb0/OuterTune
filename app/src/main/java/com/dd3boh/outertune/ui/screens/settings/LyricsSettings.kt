@@ -653,7 +653,7 @@ fun LyricsSettings(
             item {
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.clear_lyrics_cache)) },
-                    icon = { Icon(painterResource(R.drawable.delete), null) },
+                    icon = { Icon(androidx.compose.material.icons.Icons.Rounded.Delete, null) },
                     onClick = { showClearLyricsDialog = true },
                 )
             }
@@ -823,7 +823,7 @@ private fun PaxsenixStatsDialog(
     DefaultDialog(
         onDismiss = onDismiss,
         title = { Text(stringResource(R.string.paxsenix_stats)) },
-        icon = { Icon(painterResource(R.drawable.stats), contentDescription = null) },
+        icon = { Icon(androidx.compose.material.icons.Icons.Rounded.Analytics, contentDescription = null) },
         buttons = {
             if (state is PaxsenixStatsState.Error) {
                 TextButton(onClick = onRetry) {

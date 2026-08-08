@@ -257,3 +257,57 @@ fun PreferenceGroupTitle(
         modifier = modifier.padding(16.dp)
     )
 }
+
+class PreferenceGroupScope {
+    @Composable
+    fun item(visible: Boolean = true, content: @Composable () -> Unit) {
+        if (visible) {
+            content()
+        }
+    }
+}
+
+@Composable
+fun PreferenceGroup(
+    title: String,
+    content: PreferenceGroupScope.() -> Unit,
+) {
+    Column {
+        PreferenceGroupTitle(title = title)
+        PreferenceGroupScope().content()
+    }
+}
+
+@Composable
+fun NumberPickerPreference(
+    title: @Composable () -> Unit,
+    icon: (@Composable () -> Unit)? = null,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    minValue: Int = 0,
+    maxValue: Int = 100,
+    valueText: (Int) -> String = { it.toString() },
+    modifier: Modifier = Modifier,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        com.dd3boh.outertune.ui.dialog.TextFieldDialog(
+            icon = icon,
+            title = title,
+            initialTextFieldValue = androidx.compose.ui.text.input.TextFieldValue(value.toString()),
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+            isInputValid = { it.toIntOrNull()?.let { num -> num in minValue..maxValue } == true },
+            onDone = { it.toIntOrNull()?.let { num -> onValueChange(num.coerceIn(minValue, maxValue)) } },
+            onDismiss = { showDialog = false }
+        )
+    }
+
+    PreferenceEntry(
+        modifier = modifier,
+        title = title,
+        description = valueText(value),
+        icon = icon,
+        onClick = { showDialog = true }
+    )
+}
