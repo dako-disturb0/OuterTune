@@ -400,3 +400,74 @@ val CountryCodeToName = mapOf(
     "YE" to "Yemen",
     "ZW" to "Zimbabwe",
 )
+
+val EnableYouLyPlusLyricsKey = booleanPreferencesKey("enableYouLyPlusLyrics")
+val EnableMegalobizLyricsKey = booleanPreferencesKey("enableMegalobizLyrics")
+val EnableUnisonLyricsKey = booleanPreferencesKey("enableUnisonLyrics")
+val PreferredLyricsProviderKey = stringPreferencesKey("lyricsProvider")
+enum class PreferredLyricsProvider {
+    BETTER_LYRICS,
+    YOULY_PLUS,
+    LRCLIB,
+    KUGOU,
+    MEGALOBIZ,
+    SIMPMUSIC,
+    UNISON,
+    PAXSENIX_APPLE_MUSIC,
+    PAXSENIX_NETEASE,
+    PAXSENIX_SPOTIFY,
+    PAXSENIX_MUSIXMATCH,
+    PAXSENIX_YOUTUBE,
+}
+val DefaultLyricsProviderOrder =
+val LyricsAnimationStyleKey = stringPreferencesKey("lyricsAnimationStyle")
+enum class LyricsAnimationStyle {
+    NONE,
+    FADE,
+    GLOW,
+    SLIDE,
+    KARAOKE,
+    APPLE,
+}
+val LyricsTextSizeKey = floatPreferencesKey("lyricsTextSize")
+val LyricsLineSpacingKey = floatPreferencesKey("lyricsLineSpacing")
+val LyricsLineBlurKey = booleanPreferencesKey("lyricsLineBlur")
+val ShowLyricsPlayerControlsKey = booleanPreferencesKey("showLyricsPlayerControls")
+val LyricsBackgroundStyleKey = stringPreferencesKey("lyricsBackgroundStyle")
+val LyricsClickKey = booleanPreferencesKey("lyricsClick")
+val LyricsScrollKey = booleanPreferencesKey("lyricsScrollKey")
+val LyricsRomanizeJapaneseKey = booleanPreferencesKey("lyricsRomanizeJapanese")
+val LyricsRomanizeKoreanKey = booleanPreferencesKey("lyricsRomanizeKorean")
+val LyricsRomanizeChineseKey = booleanPreferencesKey("lyricsRomanizeChinese")
+val LyricsRomanizeHindiKey = booleanPreferencesKey("lyricsRomanizeHindi")
+val LyricsRomanizeOtherLanguagesKey = booleanPreferencesKey("lyricsRomanizeOtherLanguages")
+val TranslateLyricsKey = booleanPreferencesKey("translateLyrics")
+val LyricsModeKey = stringPreferencesKey("lyricsMode")
+enum class LyricsMode {
+    V2,
+    ENHANCED,
+}
+val LyricsV2BounceFactorKey = floatPreferencesKey("lyricsV2BounceFactor")
+val LyricsV2GlowFactorKey = floatPreferencesKey("lyricsV2GlowFactor")
+val LyricsV2FillTransitionWidthKey = floatPreferencesKey("lyricsV2FillTransitionWidth")
+val LyricsV2LrcBounceEnabledKey = booleanPreferencesKey("lyricsV2LrcBounceEnabled")
+val PreloadQueueLyricsEnabledKey = booleanPreferencesKey("preload_queue_lyrics_enabled")
+val QueueLyricsPreloadCountKey = intPreferencesKey("queue_lyrics_preload_count")
+
+val AiProviderKey = stringPreferencesKey("ai_provider")
+val AiCustomEndpointKey = stringPreferencesKey("ai_custom_endpoint")
+val AiApiKeyKey = stringPreferencesKey("ai_api_key")
+val AiApiValidationStatusKey = stringPreferencesKey("ai_api_validation_status")
+val AiSelectedModelKey = stringPreferencesKey("ai_selected_model")
+val AiCustomModelKey = stringPreferencesKey("ai_custom_model")
+enum class AiProvider {
+    CHATGPT,
+    GEMINI,
+    CUSTOM,
+    NONE,
+}
+enum class AiApiValidationStatus {
+    UNKNOWN,
+    SUCCESS,
+    FAILED,
+}

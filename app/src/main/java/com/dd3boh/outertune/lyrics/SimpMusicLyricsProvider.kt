@@ -1,21 +1,28 @@
+/*
+ * ArchiveTune (2026)
+ * © Rukamori — github.com/rukamori
+ * GPL-3.0 License | Contributors: see git history
+ * Do not remove or alter this notice. - Per GPL-3.0 Section 4 & Section 5
+ */
+
 package com.dd3boh.outertune.lyrics
 
 import android.content.Context
-import com.dd3boh.outertune.constants.EnableSimpMusicKey
+import com.dd3boh.outertune.constants.EnableSimpMusicLyricsKey
+import com.dd3boh.simpmusic.SimpMusicLyrics
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
-import com.dd3boh.simpmusic.SimpMusicLyrics
 
 object SimpMusicLyricsProvider : LyricsProvider {
-    override val name = "SimpMusic"
+    override val name: String = "SimpMusic"
 
-    override fun isEnabled(context: Context): Boolean =
-        context.dataStore[EnableSimpMusicKey] ?: true
+    override fun isEnabled(context: Context): Boolean = context.dataStore[EnableSimpMusicLyricsKey] ?: true
 
     override suspend fun getLyrics(
         id: String,
         title: String,
         artist: String,
+        album: String?,
         duration: Int,
     ): Result<String> = SimpMusicLyrics.getLyrics(videoId = id, duration = duration)
 
@@ -23,6 +30,7 @@ object SimpMusicLyricsProvider : LyricsProvider {
         id: String,
         title: String,
         artist: String,
+        album: String?,
         duration: Int,
         callback: (String) -> Unit,
     ) {

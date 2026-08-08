@@ -47,13 +47,10 @@ fun BoxScope.HideOnScrollFAB(
         exit = slideOutVertically { it },
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Horizontal)
-            )
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
+            modifier = Modifier.padding(16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -77,13 +74,10 @@ fun BoxScope.HideOnScrollFAB(
         exit = slideOutVertically { it },
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Horizontal)
-            )
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
+            modifier = Modifier.padding(16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -108,13 +102,10 @@ fun BoxScope.HideOnScrollFAB(
         exit = slideOutVertically { it },
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Horizontal)
-            )
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
+            modifier = Modifier.padding(16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -138,13 +129,10 @@ fun BoxScope.HideOnScrollFAB(
         exit = slideOutVertically { it },
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Horizontal)
-            )
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
+            modifier = Modifier.padding(16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -168,13 +156,10 @@ fun BoxScope.HideOnScrollFAB(
         exit = slideOutVertically { it },
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Horizontal)
-            )
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
+            modifier = Modifier.padding(16.dp),
             onClick = onClick
         ) {
             Icon(
@@ -198,13 +183,10 @@ fun BoxScope.HideOnScrollFAB(
         exit = slideOutVertically { it },
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Horizontal)
-            )
+            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = MiniPlayerHeight + BottomNavHeight + 16.dp),
+            modifier = Modifier.padding(16.dp),
             onClick = onClick
         ) {
             Icon(

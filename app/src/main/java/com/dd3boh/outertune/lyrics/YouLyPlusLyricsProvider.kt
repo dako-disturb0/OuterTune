@@ -9,22 +9,22 @@ package com.dd3boh.outertune.lyrics
 
 import android.content.Context
 import android.util.Log
-import com.dd3boh.betterlyrics.BetterLyrics
-import com.dd3boh.outertune.constants.EnableBetterLyricsKey
+import com.dd3boh.outertune.constants.EnableYouLyPlusLyricsKey
 import com.dd3boh.outertune.utils.GlobalLog
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
+import com.dd3boh.outertune.youlyplus.YouLyPlus
 
-object BetterLyricsProvider : LyricsProvider {
+object YouLyPlusLyricsProvider : LyricsProvider {
     init {
-        BetterLyrics.logger = { message ->
-            GlobalLog.append(Log.INFO, "BetterLyrics", message)
+        YouLyPlus.logger = { message ->
+            GlobalLog.append(Log.INFO, "YouLyPlus", message)
         }
     }
 
-    override val name = "BetterLyrics"
+    override val name = "YouLyPlus"
 
-    override fun isEnabled(context: Context): Boolean = context.dataStore[EnableBetterLyricsKey] ?: true
+    override fun isEnabled(context: Context): Boolean = context.dataStore[EnableYouLyPlusLyricsKey] ?: true
 
     override suspend fun getLyrics(
         id: String,
@@ -32,7 +32,13 @@ object BetterLyricsProvider : LyricsProvider {
         artist: String,
         album: String?,
         duration: Int,
-    ): Result<String> = BetterLyrics.getLyrics(title = title, artist = artist, album = album, durationSeconds = duration)
+    ): Result<String> =
+        YouLyPlus.getLyrics(
+            title = title,
+            artist = artist,
+            album = album,
+            durationSeconds = duration,
+        )
 
     override suspend fun getAllLyrics(
         id: String,
@@ -42,7 +48,7 @@ object BetterLyricsProvider : LyricsProvider {
         duration: Int,
         callback: (String) -> Unit,
     ) {
-        BetterLyrics.getAllLyrics(
+        YouLyPlus.getAllLyrics(
             title = title,
             artist = artist,
             album = album,

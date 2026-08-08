@@ -374,7 +374,7 @@ class MainActivity : ComponentActivity() {
                     Log.v(MAIN_TAG, "RC-2.2")
 
                     fun getNavPadding(): Dp {
-                        return if (!useNavRail) (if (slimNav) 52.dp else 68.dp) else MinMiniPlayerHeight
+                        return if (!useNavRail) (if (slimNav) 52.dp else NavigationBarHeight) else MinMiniPlayerHeight
                     }
 
                     val playerBottomSheetState = rememberBottomSheetState(

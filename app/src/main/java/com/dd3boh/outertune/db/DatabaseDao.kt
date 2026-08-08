@@ -477,4 +477,23 @@ AND NOT EXISTS (
     fun checkpoint() {
         raw("PRAGMA wal_checkpoint(FULL)".toSQLiteQuery())
     }
+
+
+    @Transaction
+    fun replaceLyrics(
+        id: String,
+        lyrics: String,
+        source: String,
+        updatedAt: Long = System.currentTimeMillis(),
+    ) {
+        upsert(
+            LyricsEntity(
+                id = id,
+                lyrics = lyrics,
+                source = source,
+                updatedAt = updatedAt
+            )
+        )
+    }
+
 }

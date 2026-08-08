@@ -664,6 +664,13 @@ class Migration12To13 : AutoMigrationSpec {
         }
 
     }
+
+
+    suspend fun <R> withTransaction(block: suspend MusicDatabase.() -> R): R =
+        androidx.room.withTransaction {
+            block()
+        }
+
 }
 
 /**
