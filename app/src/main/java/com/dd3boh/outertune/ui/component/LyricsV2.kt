@@ -5,7 +5,7 @@
  * Do not remove or alter this notice. - Per GPL-3.0 Section 4 & Section 5
  */
 
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.dd3boh.outertune.ui.component
 
@@ -39,12 +39,14 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -257,32 +259,29 @@ fun LyricsV2(
 
     // ── Lyrics data ──
     val currentLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
-    val lyrics = currentLyrics?.lyrics
-    val showTranslations =
-        remember(currentLyrics?.source) {
-            currentLyrics?.source == LyricsEntity.Source.AI_TRANSLATION.value
-        }
+    val lyrics = currentLyrics
+    val showTranslations = false
 
     // ── Parse lyrics into entries ──
-    val isSynced = remember(lyrics) { lyrics != null && (isLineSyncedLrc(lyrics!!) || isTtml(lyrics!!)) }
-    val isTtmlFormat = remember(lyrics) { lyrics != null && isTtml(lyrics!!) }
+    val isSynced = remember(lyrics) { lyrics != null && (isLineSyncedLrc(lyrics) || isTtml(lyrics)) }
+    val isTtmlFormat = remember(lyrics) { lyrics != null && isTtml(lyrics) }
 
     val lyricsEntries: List<LyricsEntry> =
         remember(lyrics) {
-            if (lyrics == null || lyrics == LYRICS_NOT_FOUND) return@remember emptyList()
+            if (lyrics.isNullOrBlank() || lyrics == LYRICS_NOT_FOUND) return@remember emptyList()
             val parsed =
                 when {
-                    isTtml(lyrics!!) -> {
-                        parseTtml(lyrics!!)
+                    isTtml(lyrics) -> {
+                        parseTtml(lyrics)
                     }
 
-                    isLineSyncedLrc(lyrics!!) -> {
+                    isLineSyncedLrc(lyrics) -> {
                         val dur = player.duration.takeIf { it > 0L } ?: 0L
-                        insertInstrumentalBreaks(parseLyrics(lyrics!!), dur)
+                        insertInstrumentalBreaks(parseLyrics(lyrics), dur)
                     }
 
                     else -> {
-                        lyrics!!
+                        lyrics
                             .lines()
                             .filter { it.isNotBlank() }
                             .mapIndexed { index, line ->
@@ -425,7 +424,7 @@ fun LyricsV2(
             Toast
                 .makeText(
                     context,
-                    context.getString(R.string.max_selection_limit, maxSelectionLimit),
+                    "Maximum $maxSelectionLimit lines selected",
                     Toast.LENGTH_SHORT,
                 ).show()
             showMaxSelectionToast = false
@@ -955,7 +954,6 @@ fun LyricsV2(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 16.dp),
-                shapes = ButtonDefaults.shapes(),
             ) {
                 Text(
                     text = "Resume",
@@ -990,8 +988,8 @@ fun LyricsV2(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.close),
-                                contentDescription = stringResource(R.string.cancel),
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(android.R.string.cancel),
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp),
                             )
@@ -1033,8 +1031,8 @@ fun LyricsV2(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.share),
-                                contentDescription = stringResource(R.string.share_selected),
+                                imageVector = Icons.Rounded.Share,
+                                contentDescription = stringResource(R.string.share),
                                 tint = Color.Black,
                                 modifier = Modifier.size(20.dp),
                             )
@@ -1068,7 +1066,7 @@ fun LyricsV2(
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        text = stringResource(R.string.share_lyrics),
+                        text = stringResource(R.string.share),
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -1080,23 +1078,24 @@ fun LyricsV2(
                             Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    shareLyricsAsText(
-                                        context = context,
-                                        payload = LyricsSharePayload(lyricsText, songTitle, artists),
-                                        songId = mediaMetadata?.id,
-                                    )
+                                    val sendIntent = android.content.Intent().apply {
+                                        action = android.content.Intent.ACTION_SEND
+                                        putExtra(android.content.Intent.EXTRA_TEXT, "\"$lyricsText\"\n\n$songTitle - $artists")
+                                        type = "text/plain"
+                                    }
+                                    context.startActivity(android.content.Intent.createChooser(sendIntent, null))
                                     showShareDialog = false
                                 }.padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.share),
+                            imageVector = Icons.Rounded.Share,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = stringResource(R.string.share_as_text),
+                            text = stringResource(R.string.share),
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -1114,13 +1113,13 @@ fun LyricsV2(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.share),
+                            imageVector = Icons.Rounded.Share,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = stringResource(R.string.share_as_image),
+                            text = stringResource(R.string.share),
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -1134,7 +1133,7 @@ fun LyricsV2(
                         horizontalArrangement = Arrangement.End,
                     ) {
                         Text(
-                            text = stringResource(R.string.cancel),
+                            text = stringResource(android.R.string.cancel),
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Medium,
@@ -1151,11 +1150,13 @@ fun LyricsV2(
 
     if (showShareImageDialog && shareDialogData != null) {
         val (lyricsText, songTitle, artists) = shareDialogData!!
-        LyricsShareImageDialog(
-            mediaMetadata = mediaMetadata,
-            payload = LyricsSharePayload(lyricsText, songTitle, artists),
-            onDismissRequest = { showShareImageDialog = false },
-        )
+        val sendIntent = android.content.Intent().apply {
+            action = android.content.Intent.ACTION_SEND
+            putExtra(android.content.Intent.EXTRA_TEXT, "\"$lyricsText\"\n\n$songTitle - $artists")
+            type = "text/plain"
+        }
+        context.startActivity(android.content.Intent.createChooser(sendIntent, null))
+        showShareImageDialog = false
     }
 }
 
@@ -1454,6 +1455,8 @@ private fun AnimatedWordV2(
 // ──────────────────────────────────────────────────────────────────────
 // LRC bounce: word-by-word spring bounce for line-synced lyrics
 // ──────────────────────────────────────────────────────────────────────
+
+private fun String.toLyricsWrappingUnits(): List<String> = this.split(" ").filter { it.isNotEmpty() }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

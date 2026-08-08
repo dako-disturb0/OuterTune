@@ -80,3 +80,11 @@ fun Modifier.fadingEdge(
     top = vertical,
     bottom = vertical
 )
+
+fun Modifier.smoothFadingEdge(
+    horizontal: Dp? = null,
+    vertical: Dp? = null,
+) = fadingEdge(
+    horizontal = horizontal,
+    vertical = vertical
+)

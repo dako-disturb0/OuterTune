@@ -270,7 +270,7 @@ class PreferenceGroupScope {
 @Composable
 fun PreferenceGroup(
     title: String,
-    content: PreferenceGroupScope.() -> Unit,
+    content: @Composable PreferenceGroupScope.() -> Unit,
 ) {
     Column {
         PreferenceGroupTitle(title = title)
@@ -296,7 +296,7 @@ fun NumberPickerPreference(
             icon = icon,
             title = title,
             initialTextFieldValue = androidx.compose.ui.text.input.TextFieldValue(value.toString()),
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
             isInputValid = { it.toIntOrNull()?.let { num -> num in minValue..maxValue } == true },
             onDone = { it.toIntOrNull()?.let { num -> onValueChange(num.coerceIn(minValue, maxValue)) } },
             onDismiss = { showDialog = false }

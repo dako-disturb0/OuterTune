@@ -1141,3 +1141,4 @@ val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils p
 val LocalNetworkConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
 val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> { error("No SnackbarHostState provided") }
 val LocalAiContentFilterPolicy = staticCompositionLocalOf { com.dd3boh.outertune.aicontentfilter.AiContentFilterPolicy.Disabled }
+val LocalAnimationsDisabled = staticCompositionLocalOf { false }

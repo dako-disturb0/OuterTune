@@ -7,17 +7,13 @@
 
 package com.dd3boh.outertune.ai
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import com.dd3boh.outertune.BuildConfig
 import com.dd3boh.outertune.constants.AiProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -31,18 +27,14 @@ object AiTextService {
     private const val OpenAiEndpoint = "https://api.openai.com/v1/chat/completions"
     private const val OpenAiModelsEndpoint = "https://api.openai.com/v1/models"
     private const val GeminiBaseEndpoint = "https://generativelanguage.googleapis.com/v1beta"
+    private val JSON = "application/json; charset=utf-8".toMediaType()
 
-    private val client =
-        HttpClient(OkHttp) {
-            engine {
-                config {
-                    connectTimeout(20, TimeUnit.SECONDS)
-                    readTimeout(60, TimeUnit.SECONDS)
-                    writeTimeout(60, TimeUnit.SECONDS)
-                    retryOnConnectionFailure(true)
-                }
-            }
-        }
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .build()
 
     suspend fun test(config: AiServiceConfig) {
         val response =
@@ -122,7 +114,6 @@ object AiTextService {
                 )
             }
 
-
             AiProvider.GEMINI -> {
                 completeGemini(
                     apiKey = config.apiKey,
@@ -157,35 +148,39 @@ object AiTextService {
         userPrompt: String,
         temperature: Double,
         maxTokens: Int,
-    ): String {
+    ): String = withContext(Dispatchers.IO) {
         val messages =
             JSONArray()
                 .put(JSONObject().put("role", "system").put("content", systemPrompt))
                 .put(JSONObject().put("role", "user").put("content", userPrompt))
-        val body =
+        val bodyStr =
             JSONObject()
                 .put("model", model)
                 .put("messages", messages)
                 .put("temperature", temperature)
                 .put("max_tokens", maxTokens)
                 .toString()
-        val response =
-            client.post(endpoint.trim()) {
-                header("Authorization", "Bearer ${apiKey.trim()}")
-                contentType(ContentType.Application.Json)
-                setBody(body)
-            }
-        val raw = response.bodyAsText()
-        if (response.status.value !in 200..299) throw apiException(response.status.value, raw)
-        val json = JSONObject(raw)
-        val content =
-            json
-                .optJSONArray("choices")
-                ?.optJSONObject(0)
-                ?.optJSONObject("message")
-                ?.optString("content")
-                ?.takeIf { it.isNotBlank() }
-        return content ?: throw AiServiceException("AI API returned an empty response")
+
+        val requestBuilder = Request.Builder()
+            .url(endpoint.trim())
+            .post(bodyStr.toRequestBody(JSON))
+        if (apiKey.isNotBlank()) {
+            requestBuilder.header("Authorization", "Bearer ${apiKey.trim()}")
+        }
+
+        client.newCall(requestBuilder.build()).execute().use { response ->
+            val raw = response.body?.string().orEmpty()
+            if (!response.isSuccessful) throw apiException(response.code, raw)
+            val json = JSONObject(raw)
+            val content =
+                json
+                    .optJSONArray("choices")
+                    ?.optJSONObject(0)
+                    ?.optJSONObject("message")
+                    ?.optString("content")
+                    ?.takeIf { it.isNotBlank() }
+            content ?: throw AiServiceException("AI API returned an empty response")
+        }
     }
 
     private suspend fun completeGemini(
@@ -195,9 +190,9 @@ object AiTextService {
         userPrompt: String,
         temperature: Double,
         maxTokens: Int,
-    ): String {
+    ): String = withContext(Dispatchers.IO) {
         val endpoint = "$GeminiBaseEndpoint/models/${model.trim()}:generateContent?key=${apiKey.trim()}"
-        val body =
+        val bodyStr =
             JSONObject()
                 .put(
                     "contents",
@@ -215,23 +210,26 @@ object AiTextService {
                         .put("temperature", temperature)
                         .put("maxOutputTokens", maxTokens),
                 ).toString()
-        val response =
-            client.post(endpoint) {
-                contentType(ContentType.Application.Json)
-                setBody(body)
-            }
-        val raw = response.bodyAsText()
-        if (response.status.value !in 200..299) throw apiException(response.status.value, raw)
-        val content =
-            JSONObject(raw)
-                .optJSONArray("candidates")
-                ?.optJSONObject(0)
-                ?.optJSONObject("content")
-                ?.optJSONArray("parts")
-                ?.optJSONObject(0)
-                ?.optString("text")
-                ?.takeIf { it.isNotBlank() }
-        return content ?: throw AiServiceException("AI API returned an empty response")
+
+        val request = Request.Builder()
+            .url(endpoint)
+            .post(bodyStr.toRequestBody(JSON))
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            val raw = response.body?.string().orEmpty()
+            if (!response.isSuccessful) throw apiException(response.code, raw)
+            val content =
+                JSONObject(raw)
+                    .optJSONArray("candidates")
+                    ?.optJSONObject(0)
+                    ?.optJSONObject("content")
+                    ?.optJSONArray("parts")
+                    ?.optJSONObject(0)
+                    ?.optString("text")
+                    ?.takeIf { it.isNotBlank() }
+            content ?: throw AiServiceException("AI API returned an empty response")
+        }
     }
 
     private fun defaultModelFor(provider: AiProvider): String =
@@ -242,44 +240,53 @@ object AiTextService {
             AiProvider.NONE -> throw AiServiceException("AI provider is disabled")
         }
 
-    private suspend fun fetchOpenAiModels(apiKey: String): List<AiModelOption> {
-        val response =
-            client.get(OpenAiModelsEndpoint) {
-                header("Authorization", "Bearer ${apiKey.trim()}")
-            }
-        val raw = response.bodyAsText()
-        if (response.status.value !in 200..299) throw apiException(response.status.value, raw)
-        val data = JSONObject(raw).optJSONArray("data") ?: return emptyList()
-        return buildList {
-            for (i in 0 until data.length()) {
-                val obj = data.optJSONObject(i) ?: continue
-                val id = obj.optString("id").takeIf { it.isNotBlank() } ?: continue
-                add(AiModelOption(id = id, displayName = id))
-            }
-        }.sortedBy { it.id }
-    }
+    private suspend fun fetchOpenAiModels(apiKey: String): List<AiModelOption> = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url(OpenAiModelsEndpoint)
+            .header("Authorization", "Bearer ${apiKey.trim()}")
+            .get()
+            .build()
 
-    private suspend fun fetchGeminiModels(apiKey: String): List<AiModelOption> {
-        val response = client.get("$GeminiBaseEndpoint/models?key=${apiKey.trim()}")
-        val raw = response.bodyAsText()
-        if (response.status.value !in 200..299) throw apiException(response.status.value, raw)
-        val models = JSONObject(raw).optJSONArray("models") ?: return emptyList()
-        return buildList {
-            for (i in 0 until models.length()) {
-                val obj = models.optJSONObject(i) ?: continue
-                val methods = obj.optJSONArray("supportedGenerationMethods")
-                val supportsGenerate =
-                    (0 until (methods?.length() ?: 0)).any {
-                        methods?.optString(it) == "generateContent"
-                    }
-                if (!supportsGenerate) continue
-                val id = obj.optString("name").removePrefix("models/").takeIf { it.isNotBlank() } ?: continue
-                val displayName = obj.optString("displayName").ifBlank { id }
-                add(AiModelOption(id = id, displayName = displayName))
-            }
+        client.newCall(request).execute().use { response ->
+            val raw = response.body?.string().orEmpty()
+            if (!response.isSuccessful) throw apiException(response.code, raw)
+            val data = JSONObject(raw).optJSONArray("data") ?: return@withContext emptyList()
+            buildList {
+                for (i in 0 until data.length()) {
+                    val obj = data.optJSONObject(i) ?: continue
+                    val id = obj.optString("id").takeIf { it.isNotBlank() } ?: continue
+                    add(AiModelOption(id = id, displayName = id))
+                }
+            }.sortedBy { it.id }
         }
     }
 
+    private suspend fun fetchGeminiModels(apiKey: String): List<AiModelOption> = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url("$GeminiBaseEndpoint/models?key=${apiKey.trim()}")
+            .get()
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            val raw = response.body?.string().orEmpty()
+            if (!response.isSuccessful) throw apiException(response.code, raw)
+            val models = JSONObject(raw).optJSONArray("models") ?: return@withContext emptyList()
+            buildList {
+                for (i in 0 until models.length()) {
+                    val obj = models.optJSONObject(i) ?: continue
+                    val methods = obj.optJSONArray("supportedGenerationMethods")
+                    val supportsGenerate =
+                        (0 until (methods?.length() ?: 0)).any {
+                            methods?.optString(it) == "generateContent"
+                        }
+                    if (!supportsGenerate) continue
+                    val id = obj.optString("name").removePrefix("models/").takeIf { it.isNotBlank() } ?: continue
+                    val displayName = obj.optString("displayName").ifBlank { id }
+                    add(AiModelOption(id = id, displayName = displayName))
+                }
+            }
+        }
+    }
 
     private fun apiException(
         status: Int,

@@ -11,6 +11,7 @@ import androidx.room.RenameColumn
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.withTransaction
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -666,12 +667,12 @@ class Migration12To13 : AutoMigrationSpec {
     }
 
 
-    suspend fun <R> withTransaction(block: suspend MusicDatabase.() -> R): R =
-        androidx.room.withTransaction {
-            block()
-        }
-
 }
+
+suspend fun <R> MusicDatabase.withTransaction(block: suspend MusicDatabase.() -> R): R =
+    (this as RoomDatabase).withTransaction {
+        block()
+    }
 
 /**
  * Nonsense migration failure

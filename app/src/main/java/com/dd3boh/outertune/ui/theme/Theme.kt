@@ -235,3 +235,6 @@ val ExpressiveFastSpringSpec: SpringSpec<Float> = spring(
     dampingRatio = Spring.DampingRatioNoBouncy,
     stiffness = Spring.StiffnessHigh
 )
+
+@Composable
+fun rememberArchiveTuneLyricsFontFamily(): androidx.compose.ui.text.font.FontFamily? = null

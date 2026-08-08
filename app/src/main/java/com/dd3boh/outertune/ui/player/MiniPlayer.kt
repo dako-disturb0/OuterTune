@@ -104,7 +104,7 @@ import com.dd3boh.outertune.ui.utils.expressiveClickable
 import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import org.akanework.gramophone.logic.utils.SemanticLyrics
+import com.dd3boh.outertune.lyrics.LyricsUtils
 import kotlin.math.roundToInt
 
 // ─── Lyric display mode ──────────────────────────────────────────────────────
@@ -252,7 +252,7 @@ fun MiniPlayer(
 fun MiniMediaInfo(
     mediaMetadata: MediaMetadata,
     error: PlaybackException?,
-    lyricsModel: SemanticLyrics? = null,
+    lyricsModel: String? = null,
     currentPosition: Long = 0L,
     showLyricInMiniPlayer: Boolean = true,
     playbackState: Int = STATE_READY,
@@ -271,16 +271,16 @@ fun MiniMediaInfo(
     val px = (ListThumbnailSize.value * density.density).roundToInt()
 
     val currentLyricText = remember(lyricsModel, currentPosition) {
-        if (lyricsModel is SemanticLyrics.SyncedLyrics && lyricsModel.text.isNotEmpty()) {
-            val lines = lyricsModel.text
+        if (!lyricsModel.isNullOrEmpty()) {
+            val parsed = LyricsUtils.parseLyrics(lyricsModel)
             var idx = -1
-            for (i in lines.indices) {
-                if (lines[i].start <= currentPosition.toULong()) {
+            for (i in parsed.indices) {
+                if (parsed[i].time <= currentPosition) {
                     idx = i
                 } else break
             }
-            if (idx >= 0 && idx < lines.size) {
-                lines[idx].text.trim().takeIf { it.isNotBlank() }
+            if (idx >= 0 && idx < parsed.size) {
+                parsed[idx].text.trim().takeIf { it.isNotBlank() }
             } else null
         } else null
     }

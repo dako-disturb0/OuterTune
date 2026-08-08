@@ -16,12 +16,6 @@ import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
 
 object BetterLyricsProvider : LyricsProvider {
-    init {
-        BetterLyrics.logger = { message ->
-            GlobalLog.append(Log.INFO, "BetterLyrics", message)
-        }
-    }
-
     override val name = "BetterLyrics"
 
     override fun isEnabled(context: Context): Boolean = context.dataStore[EnableBetterLyricsKey] ?: true

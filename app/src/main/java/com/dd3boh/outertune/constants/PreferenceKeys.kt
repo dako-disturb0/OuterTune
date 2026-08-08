@@ -118,14 +118,21 @@ val PauseRemoteListenHistoryKey = booleanPreferencesKey("pauseRemoteListenHistor
 val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")
 val EnableKugouKey = booleanPreferencesKey("enableKugou")
 val EnableLrcLibKey = booleanPreferencesKey("enableLrcLib")
-val EnableSimpMusicKey = booleanPreferencesKey("enableSimpMusic")
+val EnableSimpMusicLyricsKey = booleanPreferencesKey("enableSimpMusic")
+val EnableSimpMusicKey = EnableSimpMusicLyricsKey
 val EnableBetterLyricsKey = booleanPreferencesKey("enableBetterLyrics")
-val EnablePaxsenixKey = booleanPreferencesKey("enablePaxsenix")
-val EnablePaxsenixAppleMusicKey = booleanPreferencesKey("enablePaxsenixAppleMusic")
-val EnablePaxsenixNeteaseKey = booleanPreferencesKey("enablePaxsenixNetease")
-val EnablePaxsenixSpotifyKey = booleanPreferencesKey("enablePaxsenixSpotify")
-val EnablePaxsenixMusixmatchKey = booleanPreferencesKey("enablePaxsenixMusixmatch")
-val EnablePaxsenixYouTubeKey = booleanPreferencesKey("enablePaxsenixYouTube")
+val EnablePaxsenixLyricsKey = booleanPreferencesKey("enablePaxsenix")
+val EnablePaxsenixKey = EnablePaxsenixLyricsKey
+val EnablePaxsenixAppleMusicLyricsKey = booleanPreferencesKey("enablePaxsenixAppleMusic")
+val EnablePaxsenixAppleMusicKey = EnablePaxsenixAppleMusicLyricsKey
+val EnablePaxsenixNeteaseLyricsKey = booleanPreferencesKey("enablePaxsenixNetease")
+val EnablePaxsenixNeteaseKey = EnablePaxsenixNeteaseLyricsKey
+val EnablePaxsenixSpotifyLyricsKey = booleanPreferencesKey("enablePaxsenixSpotify")
+val EnablePaxsenixSpotifyKey = EnablePaxsenixSpotifyLyricsKey
+val EnablePaxsenixMusixmatchLyricsKey = booleanPreferencesKey("enablePaxsenixMusixmatch")
+val EnablePaxsenixMusixmatchKey = EnablePaxsenixMusixmatchLyricsKey
+val EnablePaxsenixYouTubeLyricsKey = booleanPreferencesKey("enablePaxsenixYouTube")
+val EnablePaxsenixYouTubeKey = EnablePaxsenixYouTubeLyricsKey
 val AiContentFilterEnabledKey = booleanPreferencesKey("aiContentFilterEnabled")
 val AiContentFilterIncludeModerateKey = booleanPreferencesKey("aiContentFilterIncludeModerate")
 val AiContentFilterLastUpdatedKey = longPreferencesKey("aiContentFilterLastUpdated")
@@ -133,6 +140,14 @@ val ShowAiLabelKey = booleanPreferencesKey("showAiLabel")
 // Comma-separated ordered list of provider names, e.g. "Paxsenix (Apple Music),BetterLyrics,SimpMusic,..."
 val LyricsProviderOrderKey = stringPreferencesKey("lyricsProviderOrder")
 val UseLoginForBrowse = booleanPreferencesKey("useLoginForBrowse")
+
+val EnableAiLyricsTranslationKey = booleanPreferencesKey("enable_ai_lyrics_translation")
+val EnableAiLyricsRomanizationKey = booleanPreferencesKey("enable_ai_lyrics_romanization")
+val AiTranslationTargetLanguageKey = stringPreferencesKey("ai_translation_target_language")
+val TranslatorTargetLangKey = stringPreferencesKey("translatorTargetLang")
+val AiRomanizationTargetLanguageKey = stringPreferencesKey("ai_romanization_target_language")
+val AiLyricsTranslationPromptKey = stringPreferencesKey("ai_lyrics_translation_prompt")
+val AiLyricsRomanizationPromptKey = stringPreferencesKey("ai_lyrics_romanization_prompt")
 
 
 /**
@@ -406,8 +421,11 @@ val CountryCodeToName = mapOf(
 )
 
 val EnableYouLyPlusLyricsKey = booleanPreferencesKey("enableYouLyPlusLyrics")
+val EnableYouLyPlusKey = EnableYouLyPlusLyricsKey
 val EnableMegalobizLyricsKey = booleanPreferencesKey("enableMegalobizLyrics")
+val EnableMegalobizKey = EnableMegalobizLyricsKey
 val EnableUnisonLyricsKey = booleanPreferencesKey("enableUnisonLyrics")
+val EnableUnisonKey = EnableUnisonLyricsKey
 val PreferredLyricsProviderKey = stringPreferencesKey("lyricsProvider")
 enum class PreferredLyricsProvider {
     BETTER_LYRICS,
@@ -423,7 +441,33 @@ enum class PreferredLyricsProvider {
     PAXSENIX_MUSIXMATCH,
     PAXSENIX_YOUTUBE,
 }
-val DefaultLyricsProviderOrder =
+
+val DefaultLyricsProviderOrder: List<PreferredLyricsProvider> = listOf(
+    PreferredLyricsProvider.BETTER_LYRICS,
+    PreferredLyricsProvider.YOULY_PLUS,
+    PreferredLyricsProvider.LRCLIB,
+    PreferredLyricsProvider.KUGOU,
+    PreferredLyricsProvider.MEGALOBIZ,
+    PreferredLyricsProvider.SIMPMUSIC,
+    PreferredLyricsProvider.UNISON,
+    PreferredLyricsProvider.PAXSENIX_APPLE_MUSIC,
+    PreferredLyricsProvider.PAXSENIX_NETEASE,
+    PreferredLyricsProvider.PAXSENIX_SPOTIFY,
+    PreferredLyricsProvider.PAXSENIX_MUSIXMATCH,
+    PreferredLyricsProvider.PAXSENIX_YOUTUBE,
+)
+
+fun serializeLyricsProviderOrder(list: List<PreferredLyricsProvider>): String =
+    list.joinToString(",") { it.name }
+
+fun deserializeLyricsProviderOrder(raw: String?): List<PreferredLyricsProvider> {
+    if (raw.isNullOrBlank()) return DefaultLyricsProviderOrder
+    val parsed = raw.split(",").mapNotNull { name ->
+        runCatching { PreferredLyricsProvider.valueOf(name.trim()) }.getOrNull()
+    }
+    val missing = DefaultLyricsProviderOrder.filterNot { it in parsed }
+    return parsed + missing
+}
 val LyricsAnimationStyleKey = stringPreferencesKey("lyricsAnimationStyle")
 enum class LyricsAnimationStyle {
     NONE,

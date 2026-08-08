@@ -21,7 +21,6 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.db.MusicDatabase
-import com.dd3boh.outertune.db.entities.LyricsEntity.Companion.uninitializedLyric
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
 import com.dd3boh.outertune.extensions.getQueueWindows
@@ -64,20 +63,14 @@ class PlayerConnection(
     val currentSong = mediaMetadata.flatMapLatest {
         database.song(it?.id)
     }
-    val currentLyrics: StateFlow<SemanticLyrics?> = mediaMetadata.flatMapLatest { mediaMetadata ->
+    val currentLyrics: StateFlow<String?> = mediaMetadata.flatMapLatest { mediaMetadata ->
         if (mediaMetadata != null) {
-            flow<SemanticLyrics?> {
-                val res = service.lyricsHelper.getLyrics(mediaMetadata) { intermediate ->
-                    emit(intermediate)
-                }
-                if (res != null) {
-                    emit(res)
-                } else {
-                    emit(uninitializedLyric)
-                }
+            flow {
+                val res = service.lyricsHelper.getLyrics(mediaMetadata)
+                emit(res)
             }
         } else {
-            flowOf(uninitializedLyric)
+            flowOf(null as String?)
         }
     }.stateIn(scope, SharingStarted.Lazily, null)
 

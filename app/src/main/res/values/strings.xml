@@ -1217,7 +1217,20 @@ We recycle translations from upstream, they are pulled periodically. -->
     <string name="gatekeeper_connection_blocked">Connection blocked by ArchiveTune Remote. This app could not be verified as an official ArchiveTune build. Install an official build from https://github.com/rukamori/ArchiveTune or https://t.me/ArchiveTuneGC.</string>
 
     <!-- Lyrics Settings -->
+    <string name="lyrics_romanize_japanese">Romanize Japanese (Kuromoji)</string>
+    <string name="lyrics_romanize_korean">Romanize Korean (Hangul)</string>
+    <string name="lyrics_romanize_chinese">Romanize Chinese (Pinyin)</string>
+    <string name="lyrics_romanize_hindi">Romanize Hindi (Devanagari)</string>
     <string name="lyrics_romanize_other_languages">Romanize other scripts (ICU)</string>
+    <string name="lyrics_line_blur">Blur inactive lyrics lines</string>
+    <string name="lyrics_text_size">Lyrics text size</string>
+    <string name="lyrics_click_change">Click lyric line to seek</string>
+    <string name="lyrics_auto_scroll">Auto scroll lyrics</string>
+    <string name="lyrics_sync_offset">Lyrics sync offset</string>
+    <string name="show_lyrics_player_controls">Show player controls in lyrics</string>
+    <string name="ai_translation_menu">AI Lyrics Translation</string>
+    <string name="animation">Animation</string>
+    <string name="text_fields">Font &amp; Formatting</string>
     <string name="set_first_lyrics_provider">Lyrics Provider Priority</string>
 
 </resources>

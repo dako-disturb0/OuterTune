@@ -5,7 +5,7 @@
  * Do not remove or alter this notice. - Per GPL-3.0 Section 4 & Section 5
  */
 
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.dd3boh.outertune.ui.component
 
@@ -59,11 +59,14 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -157,10 +160,11 @@ import com.dd3boh.outertune.lyrics.LyricsUtils.parseLyrics
 import com.dd3boh.outertune.lyrics.LyricsUtils.parseTtml
 import com.dd3boh.outertune.lyrics.LyricsUtils.romanizeLyricsLine
 import com.dd3boh.outertune.lyrics.LyricsUtils.shouldRomanizeLyricsLine
+import com.dd3boh.outertune.LocalMenuState
 import com.dd3boh.outertune.ui.component.shimmer.ShimmerHost
 import com.dd3boh.outertune.ui.component.shimmer.TextPlaceholder
-import com.dd3boh.outertune.ui.screens.settings.DarkMode
-import com.dd3boh.outertune.ui.screens.settings.LyricsPosition
+import com.dd3boh.outertune.constants.DarkMode
+import com.dd3boh.outertune.constants.LyricsPosition
 import com.dd3boh.outertune.ui.theme.rememberArchiveTuneLyricsFontFamily
 import com.dd3boh.outertune.ui.utils.smoothFadingEdge
 import com.dd3boh.outertune.utils.rememberEnumPreference
@@ -408,7 +412,7 @@ private fun KaraokeWord(
 @Composable
 fun Lyrics(
     sliderPositionProvider: () -> Long?,
-    lyricsSyncOffset: Int,
+    lyricsSyncOffset: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -467,7 +471,7 @@ fun Lyrics(
 
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val lyricsEntity by playerConnection.currentLyrics.collectAsState(initial = null)
-    val lyrics = remember(lyricsEntity) { lyricsEntity?.lyrics?.trim() }
+    val lyrics = remember(lyricsEntity) { lyricsEntity?.trim() }
 
     val playerBackground by rememberEnumPreference(
         key = PlayerBackgroundStyleKey,
@@ -600,7 +604,7 @@ fun Lyrics(
             Toast
                 .makeText(
                     context,
-                    context.getString(R.string.max_selection_limit, maxSelectionLimit),
+                    "Maximum $maxSelectionLimit lines selected",
                     Toast.LENGTH_SHORT,
                 ).show()
             showMaxSelectionToast = false
@@ -2448,13 +2452,13 @@ fun Lyrics(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.play),
+                        imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(18.dp),
                     )
                     Text(
-                        text = stringResource(R.string.resume_autoscroll),
+                        text = stringResource(R.string.lyrics_auto_scroll),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
@@ -2489,8 +2493,8 @@ fun Lyrics(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.close),
-                                    contentDescription = stringResource(R.string.cancel),
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = stringResource(android.R.string.cancel),
                                     tint = Color.White,
                                     modifier = Modifier.size(20.dp),
                                 )
@@ -2519,7 +2523,7 @@ fun Lyrics(
                                                     shareDialogData =
                                                         Triple(
                                                             selectedLyricsText,
-                                                            metadata.title,
+                                                            metadata.title ?: "",
                                                             metadata.artists.joinToString { it.name },
                                                         )
                                                     showShareDialog = true
@@ -2532,8 +2536,8 @@ fun Lyrics(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.share),
-                                    contentDescription = stringResource(R.string.share_selected),
+                                    imageVector = Icons.Rounded.Share,
+                                    contentDescription = stringResource(R.string.share),
                                     tint = Color.Black,
                                     modifier = Modifier.size(20.dp),
                                 )
@@ -2567,7 +2571,7 @@ fun Lyrics(
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            text = stringResource(R.string.share_lyrics),
+                            text = stringResource(R.string.share),
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -2579,23 +2583,24 @@ fun Lyrics(
                                 Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        shareLyricsAsText(
-                                            context = context,
-                                            payload = LyricsSharePayload(lyricsText, songTitle, artists),
-                                            songId = mediaMetadata?.id,
-                                        )
+                                        val sendIntent = android.content.Intent().apply {
+                                            action = android.content.Intent.ACTION_SEND
+                                            putExtra(android.content.Intent.EXTRA_TEXT, "\"$lyricsText\"\n\n$songTitle - $artists")
+                                            type = "text/plain"
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(sendIntent, null))
                                         showShareDialog = false
                                     }.padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.share),
+                                imageVector = Icons.Rounded.Share,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = stringResource(R.string.share_as_text),
+                                text = stringResource(R.string.share),
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
@@ -2606,20 +2611,24 @@ fun Lyrics(
                                 Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        shareDialogData = Triple(lyricsText, songTitle, artists)
-                                        showShareImageDialog = true
+                                        val sendIntent = android.content.Intent().apply {
+                                            action = android.content.Intent.ACTION_SEND
+                                            putExtra(android.content.Intent.EXTRA_TEXT, "\"$lyricsText\"\n\n$songTitle - $artists")
+                                            type = "text/plain"
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(sendIntent, null))
                                         showShareDialog = false
                                     }.padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.share),
+                                imageVector = Icons.Rounded.Share,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = stringResource(R.string.share_as_image),
+                                text = stringResource(R.string.share),
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
@@ -2633,7 +2642,7 @@ fun Lyrics(
                             horizontalArrangement = Arrangement.End,
                         ) {
                             Text(
-                                text = stringResource(R.string.cancel),
+                                text = stringResource(android.R.string.cancel),
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.error,
                                 fontWeight = FontWeight.Medium,
@@ -2650,11 +2659,13 @@ fun Lyrics(
 
         if (showShareImageDialog && shareDialogData != null) {
             val (lyricsText, songTitle, artists) = shareDialogData!!
-            LyricsShareImageDialog(
-                mediaMetadata = mediaMetadata,
-                payload = LyricsSharePayload(lyricsText, songTitle, artists),
-                onDismissRequest = { showShareImageDialog = false },
-            )
+            val sendIntent = android.content.Intent().apply {
+                action = android.content.Intent.ACTION_SEND
+                putExtra(android.content.Intent.EXTRA_TEXT, "\"$lyricsText\"\n\n$songTitle - $artists")
+                type = "text/plain"
+            }
+            context.startActivity(android.content.Intent.createChooser(sendIntent, null))
+            showShareImageDialog = false
         }
     }
 }

@@ -8,8 +8,8 @@
 package com.dd3boh.outertune.lyrics
 
 import android.content.Context
-import com.dd3boh.outertune.innertube.YouTube
-import com.dd3boh.outertune.innertube.models.WatchEndpoint
+import com.zionhuang.innertube.YouTube
+import com.zionhuang.innertube.models.WatchEndpoint
 
 object YouTubeLyricsProvider : LyricsProvider {
     override val name = "YouTube Music"

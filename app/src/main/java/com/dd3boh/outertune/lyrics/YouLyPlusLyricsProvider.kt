@@ -34,6 +34,7 @@ object YouLyPlusLyricsProvider : LyricsProvider {
         duration: Int,
     ): Result<String> =
         YouLyPlus.getLyrics(
+            videoId = id,
             title = title,
             artist = artist,
             album = album,
@@ -49,6 +50,7 @@ object YouLyPlusLyricsProvider : LyricsProvider {
         callback: (String) -> Unit,
     ) {
         YouLyPlus.getAllLyrics(
+            videoId = id,
             title = title,
             artist = artist,
             album = album,

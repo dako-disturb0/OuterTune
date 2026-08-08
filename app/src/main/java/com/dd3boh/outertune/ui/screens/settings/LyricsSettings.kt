@@ -5,7 +5,7 @@
  * Do not remove or alter this notice. - Per GPL-3.0 Section 4 & Section 5
  */
 
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.dd3boh.outertune.ui.screens.settings
 
@@ -27,12 +27,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Analytics
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -98,10 +105,11 @@ import com.dd3boh.outertune.constants.QueueLyricsPreloadCountKey
 import com.dd3boh.outertune.constants.deserializeLyricsProviderOrder
 import com.dd3boh.paxsenix.models.PaxsenixStats
 import com.dd3boh.paxsenix.models.ProviderStats
-import com.dd3boh.outertune.ui.component.ActionPromptDialog
-import com.dd3boh.outertune.ui.component.DefaultDialog
+import androidx.compose.material3.TopAppBarScrollBehavior
+import com.dd3boh.outertune.ui.dialog.ActionPromptDialog
+import com.dd3boh.outertune.ui.dialog.DefaultDialog
 import com.dd3boh.outertune.ui.component.EnumListPreference
-import com.dd3boh.outertune.ui.component.IconButton
+import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.NumberPickerPreference
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroup
@@ -118,6 +126,7 @@ import kotlin.math.roundToInt
 @Composable
 fun LyricsSettings(
     navController: NavController,
+    scrollBehavior: TopAppBarScrollBehavior? = null,
     viewModel: ContentSettingsViewModel = hiltViewModel(),
 ) {
     var showClearLyricsDialog by remember { mutableStateOf(false) }
@@ -233,7 +242,7 @@ fun LyricsSettings(
         Modifier
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState())
-            .padding(bottom = SettingsDimensions.ScreenBottomPadding),
+            .padding(bottom = 32.dp),
     ) {
         var showLyricsTextSizeDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -248,7 +257,6 @@ fun LyricsSettings(
                 buttons = {
                     TextButton(
                         onClick = { tempTextSize = 24f },
-                        shapes = ButtonDefaults.shapes(),
                     ) {
                         Text(stringResource(R.string.reset))
                     }
@@ -260,7 +268,6 @@ fun LyricsSettings(
                             tempTextSize = lyricsTextSize
                             showLyricsTextSizeDialog = false
                         },
-                        shapes = ButtonDefaults.shapes(),
                     ) {
                         Text(stringResource(android.R.string.cancel))
                     }
@@ -269,7 +276,6 @@ fun LyricsSettings(
                             onLyricsTextSizeChange(tempTextSize)
                             showLyricsTextSizeDialog = false
                         },
-                        shapes = ButtonDefaults.shapes(),
                     ) {
                         Text(stringResource(android.R.string.ok))
                     }
@@ -315,7 +321,6 @@ fun LyricsSettings(
                 buttons = {
                     TextButton(
                         onClick = { tempLineSpacing = 1.3f },
-                        shapes = ButtonDefaults.shapes(),
                     ) {
                         Text(stringResource(R.string.reset))
                     }
@@ -327,7 +332,6 @@ fun LyricsSettings(
                             tempLineSpacing = lyricsLineSpacing
                             showLyricsLineSpacingDialog = false
                         },
-                        shapes = ButtonDefaults.shapes(),
                     ) {
                         Text(stringResource(android.R.string.cancel))
                     }
@@ -336,7 +340,6 @@ fun LyricsSettings(
                             onLyricsLineSpacingChange(tempLineSpacing)
                             showLyricsLineSpacingDialog = false
                         },
-                        shapes = ButtonDefaults.shapes(),
                     ) {
                         Text(stringResource(android.R.string.ok))
                     }
@@ -373,7 +376,7 @@ fun LyricsSettings(
             item {
                 EnumListPreference(
                     title = { Text(stringResource(R.string.lyrics_mode)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     selectedValue = lyricsMode,
                     onValueSelected = onLyricsModeChange,
                     valueText = {
@@ -391,7 +394,7 @@ fun LyricsSettings(
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.lyrics_animation_style)) },
                     description = if (animationSettingsEnabled) null else stringResource(R.string.lyrics_animation_style_v2_only),
-                    icon = { Icon(painterResource(R.drawable.animation), null) },
+                    icon = { Icon(Icons.Rounded.AutoAwesome, null) },
                     onClick = { navController.navigate("settings/appearance/lyrics_animations") },
                     isEnabled = animationSettingsEnabled,
                 )
@@ -400,7 +403,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.lyrics_click_change)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = lyricsClick,
                     onCheckedChange = onLyricsClickChange,
                 )
@@ -409,7 +412,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.lyrics_auto_scroll)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = lyricsScroll,
                     onCheckedChange = onLyricsScrollChange,
                 )
@@ -418,7 +421,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.lyrics_line_blur)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = lyricsLineBlur,
                     onCheckedChange = onLyricsLineBlurChange,
                 )
@@ -428,7 +431,7 @@ fun LyricsSettings(
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.lyrics_text_size)) },
                     description = "${lyricsTextSize.roundToInt()} sp",
-                    icon = { Icon(painterResource(R.drawable.text_fields), null) },
+                    icon = { Icon(Icons.Rounded.TextFields, null) },
                     onClick = { showLyricsTextSizeDialog = true },
                 )
             }
@@ -437,7 +440,7 @@ fun LyricsSettings(
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.lyrics_line_spacing)) },
                     description = "${String.format("%.1f", lyricsLineSpacing)}x",
-                    icon = { Icon(painterResource(R.drawable.text_fields), null) },
+                    icon = { Icon(Icons.Rounded.TextFields, null) },
                     onClick = { showLyricsLineSpacingDialog = true },
                 )
             }
@@ -447,7 +450,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.enable_betterlyrics)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enableBetterLyrics,
                     onCheckedChange = onEnableBetterLyricsChange,
                 )
@@ -456,7 +459,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.enable_youlyplus_lyrics)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enableYouLyPlusLyrics,
                     onCheckedChange = onEnableYouLyPlusLyricsChange,
                 )
@@ -465,7 +468,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.enable_lrclib)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enableLrclib,
                     onCheckedChange = onEnableLrclibChange,
                 )
@@ -474,7 +477,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.enable_kugou)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enableKugou,
                     onCheckedChange = onEnableKugouChange,
                 )
@@ -483,7 +486,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.enable_unison_lyrics)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enableUnisonLyrics,
                     onCheckedChange = onEnableUnisonLyricsChange,
                 )
@@ -492,7 +495,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.enable_simpmusic_lyrics)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enableSimpMusicLyrics,
                     onCheckedChange = onEnableSimpMusicLyricsChange,
                 )
@@ -501,7 +504,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.enable_megalobiz_lyrics)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enableMegalobizLyrics,
                     onCheckedChange = onEnableMegalobizLyricsChange,
                 )
@@ -510,7 +513,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.enable_paxsenix_lyrics)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enablePaxsenixLyrics,
                     onCheckedChange = onEnablePaxsenixLyricsChange,
                 )
@@ -519,7 +522,7 @@ fun LyricsSettings(
             item(visible = enablePaxsenixLyrics) {
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.paxsenix_stats)) },
-                    icon = { Icon(painterResource(R.drawable.stats), null) },
+                    icon = { Icon(Icons.Rounded.Analytics, null) },
                     onClick = { showPaxsenixStatsDialog = true },
                 )
             }
@@ -527,7 +530,7 @@ fun LyricsSettings(
             item(visible = enablePaxsenixLyrics) {
                 SwitchPreference(
                     title = { Text("Paxsenix: Apple Music") },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enablePaxsenixAppleMusicLyrics,
                     onCheckedChange = onEnablePaxsenixAppleMusicLyricsChange,
                 )
@@ -536,7 +539,7 @@ fun LyricsSettings(
             item(visible = enablePaxsenixLyrics) {
                 SwitchPreference(
                     title = { Text("Paxsenix: NetEase") },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enablePaxsenixNeteaseLyrics,
                     onCheckedChange = onEnablePaxsenixNeteaseLyricsChange,
                 )
@@ -545,7 +548,7 @@ fun LyricsSettings(
             item(visible = enablePaxsenixLyrics) {
                 SwitchPreference(
                     title = { Text("Paxsenix: Spotify") },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enablePaxsenixSpotifyLyrics,
                     onCheckedChange = onEnablePaxsenixSpotifyLyricsChange,
                 )
@@ -554,7 +557,7 @@ fun LyricsSettings(
             item(visible = enablePaxsenixLyrics) {
                 SwitchPreference(
                     title = { Text("Paxsenix: Musixmatch") },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enablePaxsenixMusixmatchLyrics,
                     onCheckedChange = onEnablePaxsenixMusixmatchLyricsChange,
                 )
@@ -563,7 +566,7 @@ fun LyricsSettings(
             item(visible = enablePaxsenixLyrics) {
                 SwitchPreference(
                     title = { Text("Paxsenix: YouTube") },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = enablePaxsenixYouTubeLyrics,
                     onCheckedChange = onEnablePaxsenixYouTubeLyricsChange,
                 )
@@ -573,7 +576,7 @@ fun LyricsSettings(
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.set_first_lyrics_provider)) },
                     description = providerOrder.firstOrNull()?.displayName(),
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     onClick = { showProviderOrderDialog = true },
                 )
             }
@@ -583,7 +586,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.lyrics_romanize_japanese)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = lyricsRomanizeJapanese,
                     onCheckedChange = onLyricsRomanizeJapaneseChange,
                 )
@@ -592,7 +595,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.lyrics_romanize_korean)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = lyricsRomanizeKorean,
                     onCheckedChange = onLyricsRomanizeKoreanChange,
                 )
@@ -601,7 +604,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.lyrics_romanize_chinese)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = lyricsRomanizeChinese,
                     onCheckedChange = onLyricsRomanizeChineseChange,
                 )
@@ -610,7 +613,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.lyrics_romanize_hindi)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = lyricsRomanizeHindi,
                     onCheckedChange = onLyricsRomanizeHindiChange,
                 )
@@ -619,7 +622,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.lyrics_romanize_other_languages)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = lyricsRomanizeOtherLanguages,
                     onCheckedChange = onLyricsRomanizeOtherLanguagesChange,
                 )
@@ -630,7 +633,7 @@ fun LyricsSettings(
             item {
                 SwitchPreference(
                     title = { Text(stringResource(R.string.preload_queue_lyrics)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     checked = preloadQueueLyricsEnabled,
                     onCheckedChange = onPreloadQueueLyricsEnabledChange,
                 )
@@ -639,7 +642,7 @@ fun LyricsSettings(
             item(visible = preloadQueueLyricsEnabled) {
                 NumberPickerPreference(
                     title = { Text(stringResource(R.string.queue_lyrics_preload_count)) },
-                    icon = { Icon(painterResource(R.drawable.lyrics), null) },
+                    icon = { Icon(Icons.Rounded.MusicNote, null) },
                     value = queueLyricsPreloadCount,
                     onValueChange = onQueueLyricsPreloadCountChange,
                     minValue = 0,
@@ -653,7 +656,7 @@ fun LyricsSettings(
             item {
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.clear_lyrics_cache)) },
-                    icon = { Icon(androidx.compose.material.icons.Icons.Rounded.Delete, null) },
+                    icon = { Icon(Icons.Rounded.Delete, null) },
                     onClick = { showClearLyricsDialog = true },
                 )
             }
@@ -668,7 +671,7 @@ fun LyricsSettings(
                 onLongClick = navController::backToMain,
             ) {
                 Icon(
-                    androidx.compose.material.icons.Icons.AutoMirrored.Rounded.ArrowBack,
+                    Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null,
                 )
             }
@@ -777,7 +780,7 @@ private fun LyricsProviderOrderDialog(
                                 modifier = Modifier.weight(1f),
                             )
                             Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Rounded.DragHandle,
+                                imageVector = Icons.Rounded.DragHandle,
                                 contentDescription = null,
                                 tint = contentColor.copy(alpha = 0.6f),
                                 modifier =
@@ -823,7 +826,7 @@ private fun PaxsenixStatsDialog(
     DefaultDialog(
         onDismiss = onDismiss,
         title = { Text(stringResource(R.string.paxsenix_stats)) },
-        icon = { Icon(androidx.compose.material.icons.Icons.Rounded.Analytics, contentDescription = null) },
+        icon = { Icon(Icons.Rounded.Analytics, contentDescription = null) },
         buttons = {
             if (state is PaxsenixStatsState.Error) {
                 TextButton(onClick = onRetry) {

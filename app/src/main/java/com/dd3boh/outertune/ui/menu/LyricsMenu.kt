@@ -5,6 +5,8 @@
  * Do not remove or alter this notice. - Per GPL-3.0 Section 4 & Section 5
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.dd3boh.outertune.ui.menu
 
 import android.app.SearchManager
@@ -40,19 +42,36 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.FormatAlignLeft
+import androidx.compose.material.icons.rounded.Cached
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.ManageSearch
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SearchOff
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.TextFields
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -108,12 +127,8 @@ import com.dd3boh.outertune.constants.AiProviderKey
 import com.dd3boh.outertune.constants.TranslatorTargetLangKey
 import com.dd3boh.outertune.db.entities.LyricsEntity
 import com.dd3boh.outertune.models.MediaMetadata
-import com.dd3boh.outertune.ui.component.DefaultDialog
-import com.dd3boh.outertune.ui.component.MenuSurfaceSection
-import com.dd3boh.outertune.ui.component.NewAction
-import com.dd3boh.outertune.ui.component.NewActionGrid
-import com.dd3boh.outertune.ui.component.NewMenuItem
-import com.dd3boh.outertune.ui.component.TextFieldDialog
+import com.dd3boh.outertune.ui.dialog.DefaultDialog
+import com.dd3boh.outertune.ui.dialog.TextFieldDialog
 import com.dd3boh.outertune.utils.TranslatorLang
 import com.dd3boh.outertune.utils.TranslatorLanguages
 import com.dd3boh.outertune.utils.rememberEnumPreference
@@ -130,7 +145,7 @@ private enum class LyricsTranslationSource {
     TRANSLATION,
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LyricsMenu(
     lyricsProvider: () -> LyricsEntity?,
@@ -163,10 +178,11 @@ fun LyricsMenu(
     if (showEditDialog) {
         TextFieldDialog(
             onDismiss = { showEditDialog = false },
-            icon = { Icon(painter = painterResource(R.drawable.edit), contentDescription = null) },
+            icon = { Icon(imageVector = Icons.Rounded.Edit, contentDescription = null) },
             title = { Text(text = mediaMetadataProvider().title) },
             initialTextFieldValue = TextFieldValue(lyricsProvider()?.lyrics.orEmpty()),
             singleLine = false,
+            isInputValid = { true },
             onDone = {
                 viewModel.updateLyrics(mediaMetadataProvider(), it)
             },
@@ -238,7 +254,7 @@ fun LyricsMenu(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.padding(12.dp),
             ) {
-                LoadingIndicator(modifier = Modifier.size(40.dp))
+                CircularProgressIndicator(modifier = Modifier.size(40.dp))
             }
         }
     }
@@ -325,13 +341,12 @@ fun LyricsMenu(
                 showLyricsSyncOffsetDialog = false
             },
             icon = {
-                Icon(painter = painterResource(R.drawable.speed), contentDescription = null)
+                Icon(imageVector = Icons.Rounded.Speed, contentDescription = null)
             },
             title = { Text(stringResource(R.string.lyrics_sync_offset)) },
             buttons = {
                 TextButton(
                     onClick = { tempLyricsSyncOffset = 0f },
-                    shapes = ButtonDefaults.shapes(),
                 ) {
                     Text(stringResource(R.string.reset))
                 }
@@ -341,7 +356,6 @@ fun LyricsMenu(
                         tempLyricsSyncOffset = lyricsSyncOffset.toFloat()
                         showLyricsSyncOffsetDialog = false
                     },
-                    shapes = ButtonDefaults.shapes(),
                 ) {
                     Text(stringResource(android.R.string.cancel))
                 }
@@ -351,7 +365,6 @@ fun LyricsMenu(
                         showLyricsSyncOffsetDialog = false
                         onDismiss()
                     },
-                    shapes = ButtonDefaults.shapes(),
                 ) {
                     Text(stringResource(android.R.string.ok))
                 }
@@ -400,7 +413,7 @@ fun LyricsMenu(
                 mutableStateOf(TextFieldValue(text = initialText))
             }
 
-        val languages by produceState(initialValue = emptyList<TranslatorLang>()) {
+        val languages by produceState<List<TranslatorLang>>(initialValue = emptyList()) {
             withContext(Dispatchers.IO) {
                 value = TranslatorLanguages.load(context)
             }
@@ -456,7 +469,7 @@ fun LyricsMenu(
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     Icon(
-                        painter = painterResource(R.drawable.translate),
+                        imageVector = Icons.Rounded.Translate,
                         contentDescription = null,
                         tint = AlertDialogDefaults.iconContentColor,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -604,7 +617,6 @@ fun LyricsMenu(
                                 isDialogAiTranslationRunning = false
                                 showTranslateDialog = false
                             },
-                            shapes = ButtonDefaults.shapes(),
                         ) {
                             Text(stringResource(android.R.string.cancel))
                         }
@@ -678,10 +690,9 @@ fun LyricsMenu(
                                     }
                                 }
                             },
-                            shapes = ButtonDefaults.shapes(),
                         ) {
                             if (isTranslationInProgress) {
-                                LoadingIndicator(modifier = Modifier.size(18.dp))
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                             }
                             Text(stringResource(R.string.translate))
@@ -703,102 +714,57 @@ fun LyricsMenu(
             ),
     ) {
         item {
-            MenuSurfaceSection(modifier = Modifier.padding(vertical = 6.dp)) {
-                NewActionGrid(
-                    actions =
-                        listOf(
-                            NewAction(
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.edit),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(28.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                },
-                                text = stringResource(R.string.edit),
-                                onClick = { showEditDialog = true },
-                            ),
-                            NewAction(
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.cached),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(28.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                },
-                                text = stringResource(R.string.refetch),
-                                onClick = {
-                                    viewModel.refetchLyrics(mediaMetadataProvider())
-                                },
-                            ),
-                            NewAction(
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.translate),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(28.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                },
-                                text = stringResource(R.string.translate),
-                                onClick = { showTranslateDialog = true },
-                                enabled = isTranslateEnabled,
-                            ),
-                            NewAction(
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.speed),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(28.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                },
-                                text = stringResource(R.string.lyrics_sync_offset),
-                                onClick = { showLyricsSyncOffsetDialog = true },
-                            ),
-                            NewAction(
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.search),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(28.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                },
-                                text = stringResource(R.string.search),
-                                onClick = { showSearchDialog = true },
-                            ),
-                        ),
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            GridMenu(
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                GridMenuItem(
+                    icon = Icons.Rounded.Edit,
+                    title = R.string.edit,
+                    onClick = { showEditDialog = true },
                 )
-                NewMenuItem(
-                    headlineContent = {
-                        Text(stringResource(R.string.show_lyrics_player_controls))
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = showPlayerControls,
-                            onCheckedChange = onShowPlayerControlsChange,
-                        )
-                    },
+                GridMenuItem(
+                    icon = Icons.Rounded.Cached,
+                    title = R.string.refetch,
                     onClick = {
-                        onShowPlayerControlsChange(!showPlayerControls)
+                        viewModel.refetchLyrics(mediaMetadataProvider())
                     },
-                    modifier =
-                        Modifier.padding(
-                            start = 8.dp,
-                            end = 8.dp,
-                            bottom = 8.dp,
-                        ),
+                )
+                GridMenuItem(
+                    icon = Icons.Rounded.Translate,
+                    title = R.string.translate,
+                    enabled = isTranslateEnabled,
+                    onClick = { showTranslateDialog = true },
+                )
+                GridMenuItem(
+                    icon = Icons.Rounded.Speed,
+                    title = R.string.lyrics_synced_badge,
+                    onClick = { showLyricsSyncOffsetDialog = true },
+                )
+                GridMenuItem(
+                    icon = Icons.Rounded.Search,
+                    title = R.string.search,
+                    onClick = { showSearchDialog = true },
                 )
             }
+        }
+
+        item {
+            ListItem(
+                headlineContent = {
+                    Text(stringResource(R.string.show_lyrics_player_controls))
+                },
+                trailingContent = {
+                    Switch(
+                        checked = showPlayerControls,
+                        onCheckedChange = onShowPlayerControlsChange,
+                    )
+                },
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun LyricsSearchResultDialog(
     state: LyricsSearchScreenState,
@@ -957,7 +923,7 @@ private fun LyricsSearchResultHeader(
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                     Icon(
-                        painter = painterResource(R.drawable.manage_search),
+                        imageVector = Icons.Rounded.ManageSearch,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.size(30.dp),
@@ -982,7 +948,7 @@ private fun LyricsSearchResultHeader(
                 )
             }
             if (isSearching) {
-                LoadingIndicator(
+                CircularProgressIndicator(
                     modifier = Modifier.size(28.dp),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
@@ -993,7 +959,7 @@ private fun LyricsSearchResultHeader(
                     modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.cached),
+                        imageVector = Icons.Rounded.Cached,
                         contentDescription = stringResource(R.string.refetch),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
@@ -1004,8 +970,8 @@ private fun LyricsSearchResultHeader(
                 modifier = Modifier.size(48.dp),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.close),
-                    contentDescription = stringResource(R.string.close),
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = stringResource(android.R.string.cancel),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
@@ -1013,7 +979,6 @@ private fun LyricsSearchResultHeader(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun LyricsSearchResultItem(
     result: LyricsSearchResultUiModel,
@@ -1021,7 +986,6 @@ private fun LyricsSearchResultItem(
     onExpandedChange: () -> Unit,
     onResultSelected: () -> Unit,
 ) {
-    val motionScheme = MaterialTheme.motionScheme
     val lyricsType =
         when {
             result.isWordSynced -> stringResource(R.string.lyrics_word_sync)
@@ -1060,7 +1024,7 @@ private fun LyricsSearchResultItem(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .animateContentSize(animationSpec = motionScheme.defaultSpatialSpec()),
+                .animateContentSize(),
         shape = MaterialTheme.shapes.extraLarge,
         color = containerColor,
         contentColor = contentColor,
@@ -1099,10 +1063,7 @@ private fun LyricsSearchResultItem(
                     modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
-                        painter =
-                            painterResource(
-                                if (isExpanded) R.drawable.expand_less else R.drawable.expand_more,
-                            ),
+                        imageVector = if (isExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                         contentDescription = stringResource(R.string.details),
                         tint = contentColor,
                     )
@@ -1119,13 +1080,13 @@ private fun LyricsSearchResultItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 LyricsSearchMetadataPill(
-                    icon = R.drawable.info,
+                    icon = Icons.Rounded.Info,
                     text = lyricsType,
                     isExpanded = isExpanded,
                     modifier = Modifier.weight(1f),
                 )
                 LyricsSearchMetadataPill(
-                    icon = R.drawable.text_fields,
+                    icon = Icons.Rounded.TextFields,
                     text = stats,
                     isExpanded = isExpanded,
                     modifier = Modifier.weight(1f),
@@ -1142,9 +1103,9 @@ private fun LyricsSearchTypeIcon(
 ) {
     val icon =
         when {
-            result.isWordSynced -> R.drawable.lyrics
-            result.isLineSynced -> R.drawable.sync
-            else -> R.drawable.format_align_left
+            result.isWordSynced -> Icons.Rounded.MusicNote
+            result.isLineSynced -> Icons.Rounded.Sync
+            else -> Icons.AutoMirrored.Rounded.FormatAlignLeft
         }
     val containerColor =
         if (isExpanded) {
@@ -1166,7 +1127,7 @@ private fun LyricsSearchTypeIcon(
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
-                painter = painterResource(icon),
+                imageVector = icon,
                 contentDescription = null,
                 tint = contentColor,
                 modifier = Modifier.size(24.dp),
@@ -1193,7 +1154,7 @@ private fun LyricsSearchResultSupportingContent(
 
 @Composable
 private fun LyricsSearchMetadataPill(
-    icon: Int,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
     isExpanded: Boolean,
     modifier: Modifier = Modifier,
@@ -1223,7 +1184,7 @@ private fun LyricsSearchMetadataPill(
             horizontalArrangement = pillArrangement,
         ) {
             Icon(
-                painter = painterResource(icon),
+                imageVector = icon,
                 contentDescription = null,
                 tint = contentColor,
                 modifier = Modifier.size(16.dp),
@@ -1249,7 +1210,7 @@ private fun LyricsSearchLoadingContent() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        LoadingIndicator(modifier = Modifier.size(40.dp))
+        CircularProgressIndicator(modifier = Modifier.size(40.dp))
         Text(
             text = stringResource(R.string.lyrics_searching_providers),
             style = MaterialTheme.typography.bodyMedium,
@@ -1269,7 +1230,7 @@ private fun LyricsSearchFooterLoading() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
     ) {
-        LoadingIndicator(modifier = Modifier.size(24.dp))
+        CircularProgressIndicator(modifier = Modifier.size(24.dp))
         Text(
             text = stringResource(R.string.lyrics_search_still_searching),
             style = MaterialTheme.typography.bodySmall,
@@ -1281,7 +1242,7 @@ private fun LyricsSearchFooterLoading() {
 @Composable
 private fun LyricsSearchEmptyContent() {
     LyricsSearchMessageContent(
-        icon = R.drawable.search_off,
+        icon = Icons.Rounded.SearchOff,
         text = stringResource(R.string.lyrics_not_found),
         containerColor = MaterialTheme.colorScheme.errorContainer,
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -1291,7 +1252,7 @@ private fun LyricsSearchEmptyContent() {
 @Composable
 private fun LyricsSearchErrorContent(messageResId: Int) {
     LyricsSearchMessageContent(
-        icon = R.drawable.error,
+        icon = Icons.Rounded.SearchOff,
         text = stringResource(messageResId),
         containerColor = MaterialTheme.colorScheme.errorContainer,
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -1300,7 +1261,7 @@ private fun LyricsSearchErrorContent(messageResId: Int) {
 
 @Composable
 private fun LyricsSearchMessageContent(
-    icon: Int,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
     containerColor: Color,
     contentColor: Color,
@@ -1320,7 +1281,7 @@ private fun LyricsSearchMessageContent(
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
-                    painter = painterResource(icon),
+                    imageVector = icon,
                     contentDescription = null,
                     tint = contentColor,
                     modifier = Modifier.size(28.dp),
@@ -1480,8 +1441,8 @@ private fun LyricsSearchInputHeader(onDismiss: () -> Unit) {
             shape = MaterialTheme.shapes.medium,
         ) {
             Icon(
-                painter = painterResource(R.drawable.close),
-                contentDescription = stringResource(R.string.close),
+                imageVector = Icons.Rounded.Close,
+                contentDescription = stringResource(android.R.string.cancel),
             )
         }
     }
@@ -1591,7 +1552,7 @@ private fun LyricsSearchInputActions(
             contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
         ) {
             Icon(
-                painter = painterResource(R.drawable.language),
+                imageVector = Icons.Rounded.Language,
                 contentDescription = null,
                 modifier = Modifier.size(ButtonDefaults.IconSize),
             )
@@ -1604,7 +1565,7 @@ private fun LyricsSearchInputActions(
             contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
         ) {
             Icon(
-                painter = painterResource(R.drawable.search),
+                imageVector = Icons.Rounded.Search,
                 contentDescription = null,
                 modifier = Modifier.size(ButtonDefaults.IconSize),
             )
