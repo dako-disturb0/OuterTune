@@ -44,6 +44,12 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import androidx.compose.foundation.border
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.dd3boh.outertune.LocalAiContentFilterPolicy
+import com.dd3boh.outertune.aicontentfilter.normalizeChannelKey
 import com.dd3boh.outertune.BuildConfig
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
@@ -113,6 +119,19 @@ fun SongListItem(
                 makeTimeString(song.song.duration * 1000L)
             ),
             badges = {
+                val aiPolicy = LocalAiContentFilterPolicy.current
+                val isAiGenerated = remember(song, aiPolicy) {
+                    aiPolicy.enabled && aiPolicy.blockedChannelKeys.isNotEmpty() &&
+                        song.artists.any { artist ->
+                            sequenceOf(artist.name, artist.id)
+                                .filterNotNull()
+                                .mapNotNull { normalizeChannelKey(it) }
+                                .any { key -> key in aiPolicy.blockedChannelKeys }
+                        }
+                }
+                if (isAiGenerated) {
+                    AiGeneratedBadge()
+                }
                 if (showLikedIcon && song.song.liked) {
                     Icon.Favorite()
                 }
@@ -381,3 +400,26 @@ fun SongGridItem(
     fillMaxWidth = fillMaxWidth,
     modifier = modifier
 )
+
+@Composable
+fun AiGeneratedBadge() {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .padding(end = 4.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                shape = RoundedCornerShape(3.dp)
+            )
+            .padding(horizontal = 3.dp, vertical = 1.dp)
+    ) {
+        Text(
+            text = "AI",
+            fontSize = 8.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            letterSpacing = 0.5.sp,
+        )
+    }
+}

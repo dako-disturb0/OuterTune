@@ -214,6 +214,12 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var syncUtils: SyncUtils
 
+    @Inject
+    lateinit var aiContentFilterRepository: AiContentFilterRepository
+
+    @Inject
+    lateinit var loadAiContentFilterPolicy: LoadAiContentFilterPolicyUseCase
+
     lateinit var activityLauncher: ActivityLauncherHelper
     lateinit var connectivityObserver: NetworkConnectivityObserver
 
@@ -453,6 +459,17 @@ class MainActivity : ComponentActivity() {
                         onDispose { removeOnNewIntentListener(listener) }
                     }
 
+                    var aiPolicy by remember { mutableStateOf(com.dd3boh.outertune.aicontentfilter.AiContentFilterPolicy.Disabled) }
+                    LaunchedEffect(Unit) {
+                        aiContentFilterRepository.observeSettings().collect { settings ->
+                            aiPolicy = if (settings.enabled) {
+                                loadAiContentFilterPolicy()
+                            } else {
+                                com.dd3boh.outertune.aicontentfilter.AiContentFilterPolicy.Disabled
+                            }
+                        }
+                    }
+
                     CompositionLocalProvider(
                         LocalDatabase provides database,
                         LocalContentColor provides contentColorFor(MaterialTheme.colorScheme.surface),
@@ -464,6 +481,7 @@ class MainActivity : ComponentActivity() {
                         LocalSyncUtils provides syncUtils,
                         LocalNetworkConnected provides isNetworkConnected,
                         LocalSnackbarHostState provides snackbarHostState,
+                        LocalAiContentFilterPolicy provides aiPolicy,
                     ) {
                         Box(
                             modifier = Modifier
@@ -1119,3 +1137,4 @@ val LocalDownloadUtil = staticCompositionLocalOf<DownloadUtil> { error("No Downl
 val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils provided") }
 val LocalNetworkConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
 val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> { error("No SnackbarHostState provided") }
+val LocalAiContentFilterPolicy = staticCompositionLocalOf { com.dd3boh.outertune.aicontentfilter.AiContentFilterPolicy.Disabled }

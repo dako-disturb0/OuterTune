@@ -459,6 +459,9 @@ AND NOT EXISTS (
     @Query("DELETE FROM lyrics WHERE lyrics.id NOT IN (SELECT song.id FROM song)")
     fun nukeDanglingLyrics()
 
+    @Query("DELETE FROM lyrics")
+    fun clearAllLyrics()
+
     @Transaction
     @Query("DELETE FROM playlist WHERE isLocal = 0")
     fun nukeRemotePlaylists()

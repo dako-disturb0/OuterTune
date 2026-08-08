@@ -193,7 +193,7 @@ class LyricsMenuViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     val lyrics = lyricsHelper.getLyrics(mediaMetadata, forceRefresh = true)
-                    database.withTransaction {
+                    database.query {
                         replaceLyrics(
                             id = mediaMetadata.id,
                             lyrics = lyrics,
