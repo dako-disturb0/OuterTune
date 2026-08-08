@@ -668,7 +668,7 @@ fun LyricsSettings(
                 onLongClick = navController::backToMain,
             ) {
                 Icon(
-                    painterResource(R.drawable.arrow_back),
+                    androidx.compose.material.icons.Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null,
                 )
             }
@@ -713,14 +713,12 @@ private fun LyricsProviderOrderDialog(
         buttons = {
             TextButton(
                 onClick = onDismiss,
-                shapes = ButtonDefaults.shapes(),
             ) {
                 Text(stringResource(android.R.string.cancel))
             }
             Spacer(Modifier.weight(1f))
             TextButton(
                 onClick = { onConfirm(providers.toList()) },
-                shapes = ButtonDefaults.shapes(),
             ) {
                 Text(stringResource(android.R.string.ok))
             }
@@ -779,7 +777,7 @@ private fun LyricsProviderOrderDialog(
                                 modifier = Modifier.weight(1f),
                             )
                             Icon(
-                                painter = painterResource(R.drawable.drag_handle),
+                                imageVector = androidx.compose.material.icons.Icons.Rounded.DragHandle,
                                 contentDescription = null,
                                 tint = contentColor.copy(alpha = 0.6f),
                                 modifier =

@@ -196,6 +196,9 @@ import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.lmScannerCoroutine
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import com.dd3boh.outertune.aicontentfilter.AiContentFilterPolicy
+import com.dd3boh.outertune.aicontentfilter.AiContentFilterRepository
+import com.dd3boh.outertune.aicontentfilter.LoadAiContentFilterPolicyUseCase
 import com.valentinilk.shimmer.LocalShimmerTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch

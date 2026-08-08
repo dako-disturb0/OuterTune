@@ -1216,4 +1216,8 @@ We recycle translations from upstream, they are pulled periodically. -->
     <string name="scheduled_backup_update_failed">Scheduled backup settings could not be saved</string>
     <string name="gatekeeper_connection_blocked">Connection blocked by ArchiveTune Remote. This app could not be verified as an official ArchiveTune build. Install an official build from https://github.com/rukamori/ArchiveTune or https://t.me/ArchiveTuneGC.</string>
 
+    <!-- Lyrics Settings -->
+    <string name="lyrics_romanize_other_languages">Romanize other scripts (ICU)</string>
+    <string name="set_first_lyrics_provider">Lyrics Provider Priority</string>
+
 </resources>
