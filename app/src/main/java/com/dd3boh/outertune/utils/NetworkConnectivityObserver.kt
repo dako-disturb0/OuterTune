@@ -7,6 +7,10 @@
 
 package com.dd3boh.outertune.utils
 
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -19,8 +23,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
  * Simple NetworkConnectivityObserver based on OuterTune's implementation
  * Provides network connectivity monitoring for auto-play functionality
  */
-class NetworkConnectivityObserver(
-    context: Context,
+@Singleton
+class NetworkConnectivityObserver @Inject constructor(
+    @ApplicationContext context: Context,
 ) {
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -71,15 +76,13 @@ class NetworkConnectivityObserver(
             val activeNetwork = connectivityManager.activeNetwork
             val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
 
-            // Check if we have internet capability
             val hasInternet = networkCapabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
 
-            // For API 23+, also check if connection is validated
             val isValidated =
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                     networkCapabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
                 } else {
-                    true // For older versions, assume validated if we have internet capability
+                    true
                 }
 
             hasInternet && isValidated
