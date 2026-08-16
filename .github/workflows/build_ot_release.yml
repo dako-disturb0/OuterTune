@@ -136,7 +136,7 @@ jobs:
 
       - name: Create GitHub Release
         if: ${{ inputs.add_to_release_tag == true || inputs.add_to_release_tag == 'true' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.final_tag }}
           name: "OuterTune ${{ env.version }} (${{ env.final_tag }})"
