@@ -14,6 +14,7 @@ import org.schabi.newpipe.extractor.exceptions.ParsingException
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
 import org.schabi.newpipe.extractor.services.youtube.YoutubeJavaScriptPlayerManager
 import java.io.IOException
+import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
 private class NewPipeDownloaderImpl(proxy: Proxy?) : Downloader() {
