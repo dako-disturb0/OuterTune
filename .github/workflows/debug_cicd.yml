@@ -1,0 +1,84 @@
+name: Debug CI-CD (Core ARM)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-core-arm:
+    name: Build Debug Core ARM (armeabi-v7a)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Patch submodules AGP version
+        run: |
+          AGP=$(sed -n 's/^androidGradlePlugin = "\(.*\)"$/\1/p' gradle/libs.versions.toml)
+          test -n "$AGP" || { echo "could not read androidGradlePlugin from version catalog"; exit 1; }
+          echo "pinning media submodule AGP to $AGP"
+          sed -i "s|classpath 'com.android.tools.build:gradle:[^']*'|classpath 'com.android.tools.build:gradle:$AGP'|" media/build.gradle
+          grep -n 'com.android.tools.build:gradle' media/build.gradle
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: "temurin"
+          cache: 'gradle'
+
+      - name: Accept SDK licenses
+        run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+
+      - name: Configure ABI splits for ARM (armeabi-v7a only)
+        run: |
+          INCLUDE_LINE='            include("armeabi-v7a")'
+          python3 - app/build.gradle.kts "$INCLUDE_LINE" <<'PYEOF'
+          import sys, re
+          path, new_include = sys.argv[1], sys.argv[2]
+          content = open(path).read()
+          content = re.sub(
+              r'(splits\s*\{[^}]*abi\s*\{[^}]*?)([ \t]*include\([^)]*\))',
+              lambda m: m.group(1) + new_include,
+              content, flags=re.DOTALL
+          )
+          open(path, 'w').write(content)
+          print(f"ABI include updated to ARM only: {new_include.strip()}")
+          PYEOF
+
+      - name: Build Core Debug APK (ARM)
+        run: ./gradlew assembleCoreDebug --stacktrace -DskipFormatKtlint
+
+      - name: Run Core Debug Tests & Lint
+        continue-on-error: true
+        run: ./gradlew lintCoreDebug testCoreDebugUnitTest --stacktrace -DskipFormatKtlint
+
+      - name: Upload Debug Core ARM APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-debug-arm-apk
+          path: app/build/outputs/apk/core/debug/*.apk
+          retention-days: 7
+
+      - name: Upload Test & Lint Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-arm-reports
+          path: |
+            app/build/reports/lint-results-*
+            **/build/reports/tests/
+          retention-days: 7
+          if-no-files-found: ignore

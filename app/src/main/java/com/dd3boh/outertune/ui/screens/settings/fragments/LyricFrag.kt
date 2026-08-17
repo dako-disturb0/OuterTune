@@ -89,6 +89,14 @@ import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.dialog.CounterDialog
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material3.SuggestionChip
+import com.dd3boh.outertune.constants.BetterLyricsCustomNodeUrlKey
+import com.dd3boh.outertune.constants.BetterLyricsWithNodesKey
+import com.dd3boh.outertune.ui.dialog.TextFieldDialog
+import com.dd3boh.outertune.viewmodels.BetterLyricsNodeViewModel
 import com.dd3boh.outertune.viewmodels.PaxsenixStatsViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -223,6 +231,10 @@ private data class ProviderItem(
 @Composable
 fun ColumnScope.LyricSourceFrag() {
     val (enableBetterLyrics, onEnableBetterLyricsChange) = rememberPreference(key = EnableBetterLyricsKey, defaultValue = true)
+    val (betterLyricsWithNodes, onBetterLyricsWithNodesChange) = rememberPreference(key = BetterLyricsWithNodesKey, defaultValue = false)
+    val (betterLyricsCustomNodeUrl, onBetterLyricsCustomNodeUrlChange) = rememberPreference(key = BetterLyricsCustomNodeUrlKey, defaultValue = "https://betenode.vercel.app")
+    var showNodeUrlDialog by rememberSaveable { mutableStateOf(false) }
+    var showNodeStats by rememberSaveable { mutableStateOf(false) }
     val (enablePaxsenix, onEnablePaxsenixChange) = rememberPreference(key = EnablePaxsenixKey, defaultValue = true)
     val (enableSimpMusic, onEnableSimpMusicChange) = rememberPreference(key = EnableSimpMusicKey, defaultValue = true)
     val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
@@ -380,6 +392,62 @@ fun ColumnScope.LyricSourceFrag() {
         checked = enableBetterLyrics,
         onCheckedChange = onEnableBetterLyricsChange
     )
+
+    // With Nodes (BeteNode Accelerator) section
+    AnimatedVisibility(
+        visible = enableBetterLyrics,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 4.dp)
+        ) {
+            SwitchPreference(
+                title = { Text(stringResource(R.string.betterlyrics_with_nodes)) },
+                description = stringResource(R.string.betterlyrics_with_nodes_desc),
+                icon = { Icon(Icons.Rounded.Hub, null) },
+                checked = betterLyricsWithNodes,
+                onCheckedChange = onBetterLyricsWithNodesChange
+            )
+
+            AnimatedVisibility(
+                visible = betterLyricsWithNodes,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, top = 2.dp)
+                ) {
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.betterlyrics_custom_node_url)) },
+                        description = betterLyricsCustomNodeUrl.ifBlank { "https://betenode.vercel.app" },
+                        icon = { Icon(Icons.Rounded.Link, null) },
+                        onClick = { showNodeUrlDialog = true }
+                    )
+
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.betterlyrics_node_status)) },
+                        description = stringResource(R.string.betterlyrics_node_status_desc),
+                        icon = { Icon(Icons.Rounded.Dns, null) },
+                        onClick = { showNodeStats = !showNodeStats }
+                    )
+
+                    AnimatedVisibility(
+                        visible = showNodeStats,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        BetterLyricsNodeCard(nodeUrl = betterLyricsCustomNodeUrl)
+                    }
+                }
+            }
+        }
+    }
+
     SwitchPreference(
         title = { Text(stringResource(R.string.enable_simpmusic_lyrics)) },
         icon = { Icon(Icons.Rounded.Lyrics, null) },
@@ -423,6 +491,49 @@ fun ColumnScope.LyricSourceFrag() {
         exit = shrinkVertically() + fadeOut()
     ) {
         PaxsenixStatsCard()
+    }
+
+    if (showNodeUrlDialog) {
+        TextFieldDialog(
+            title = { Text(stringResource(R.string.betterlyrics_custom_node_url)) },
+            initialTextFieldValue = androidx.compose.ui.text.input.TextFieldValue(betterLyricsCustomNodeUrl),
+            placeholder = { Text("https://betenode.vercel.app") },
+            onDone = { url ->
+                onBetterLyricsCustomNodeUrlChange(url.trim())
+                showNodeUrlDialog = false
+            },
+            onDismiss = { showNodeUrlDialog = false },
+            extraContent = {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    Text(
+                        text = stringResource(R.string.options),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SuggestionChip(
+                            onClick = {
+                                onBetterLyricsCustomNodeUrlChange("https://betenode.vercel.app")
+                                showNodeUrlDialog = false
+                            },
+                            label = { Text(stringResource(R.string.betterlyrics_preset_node)) }
+                        )
+                        SuggestionChip(
+                            onClick = {
+                                onBetterLyricsCustomNodeUrlChange("https://expo.dako.web.id")
+                                showNodeUrlDialog = false
+                            },
+                            label = { Text(stringResource(R.string.betterlyrics_preset_origin)) }
+                        )
+                    }
+                }
+            }
+        )
     }
 }
 
@@ -558,6 +669,140 @@ private fun PaxsenixStatsCard(
                                     }
                                 )
                             }
+                        }
+                    }
+                }
+
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BetterLyricsNodeCard(
+    nodeUrl: String,
+    viewModel: BetterLyricsNodeViewModel = hiltViewModel(),
+) {
+    val health by viewModel.health.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    LaunchedEffect(nodeUrl) {
+        viewModel.testNode(nodeUrl)
+    }
+
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.betterlyrics_node_status),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = nodeUrl.ifBlank { "https://betenode.vercel.app" },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                androidx.compose.material3.IconButton(onClick = { viewModel.testNode(nodeUrl) }) {
+                    AnimatedContent(targetState = isLoading, label = "refresh_node") { loading ->
+                        if (loading) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.refresh))
+                        }
+                    }
+                }
+            }
+
+            when {
+                error != null -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.errorContainer
+                        ) {
+                            Text(
+                                text = stringResource(R.string.betterlyrics_node_offline),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = error ?: "",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                health != null -> {
+                    val h = health!!
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = stringResource(R.string.betterlyrics_node_online),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = "${stringResource(R.string.betterlyrics_node_latency)}: ${h.latencyMs} ms",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = when {
+                                h.latencyMs < 150 -> MaterialTheme.colorScheme.primary
+                                h.latencyMs < 500 -> MaterialTheme.colorScheme.tertiary
+                                else -> MaterialTheme.colorScheme.error
+                            }
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        StatChip(label = stringResource(R.string.betterlyrics_node_role), value = h.role)
+                        StatChip(label = stringResource(R.string.betterlyrics_node_platform), value = h.platform)
+                        if (h.hitRate != null) {
+                            StatChip(label = stringResource(R.string.betterlyrics_node_cache_hit_rate), value = h.hitRate)
                         }
                     }
                 }

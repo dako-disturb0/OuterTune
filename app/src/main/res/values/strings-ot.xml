@@ -225,6 +225,24 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="providers_breakdown">Provider Breakdown</string>
     <string name="refresh">Refresh</string>
 
+    <!-- BetterLyrics With Nodes -->
+    <string name="betterlyrics_with_nodes">With Nodes (Fast Distribution)</string>
+    <string name="betterlyrics_with_nodes_desc">Accelerate lyrics distribution using custom edge nodes or origin orchestrators (supports betenode)</string>
+    <string name="betterlyrics_custom_node_url">Custom Node / Origin URL</string>
+    <string name="betterlyrics_custom_node_url_desc">Set a custom BeteNode endpoint domain (e.g. https://betenode.vercel.app or https://expo.dako.web.id)</string>
+    <string name="betterlyrics_node_status">With Nodes Status &amp; Telemetry</string>
+    <string name="betterlyrics_node_status_desc">Check real-time health, latency, platform, and cache hit rate of the node</string>
+    <string name="betterlyrics_test_node">Test Connection</string>
+    <string name="betterlyrics_node_online">Online</string>
+    <string name="betterlyrics_node_offline">Offline</string>
+    <string name="betterlyrics_node_latency">Latency</string>
+    <string name="betterlyrics_node_role">Role</string>
+    <string name="betterlyrics_node_platform">Platform</string>
+    <string name="betterlyrics_node_cache_hit_rate">Cache Hit Rate</string>
+    <string name="betterlyrics_node_cached_items">Cached Items</string>
+    <string name="betterlyrics_preset_node">Preset Node (Vercel)</string>
+    <string name="betterlyrics_preset_origin">Preset Origin (Dako)</string>
+
 <!-- Local player settings -->
     <string name="local_library_enable_title">Enable local media</string>
     <string name="local_library_enable_description">Disabling will hide local library from the app</string>

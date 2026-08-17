@@ -120,6 +120,8 @@ val EnableKugouKey = booleanPreferencesKey("enableKugou")
 val EnableLrcLibKey = booleanPreferencesKey("enableLrcLib")
 val EnableSimpMusicKey = booleanPreferencesKey("enableSimpMusic")
 val EnableBetterLyricsKey = booleanPreferencesKey("enableBetterLyrics")
+val BetterLyricsWithNodesKey = booleanPreferencesKey("betterLyricsWithNodes")
+val BetterLyricsCustomNodeUrlKey = stringPreferencesKey("betterLyricsCustomNodeUrl")
 val EnablePaxsenixKey = booleanPreferencesKey("enablePaxsenix")
 // Comma-separated ordered list of provider names, e.g. "Paxsenix (Apple Music),BetterLyrics,SimpMusic,..."
 val LyricsProviderOrderKey = stringPreferencesKey("lyricsProviderOrder")

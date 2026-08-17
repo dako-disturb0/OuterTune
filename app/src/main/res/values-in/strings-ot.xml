@@ -305,4 +305,23 @@
     <string name="dns_test_testing">Menguji koneksi...</string>
     <string name="dns_test_success">Berhasil terhubung! Waktu respon: %d ms</string>
     <string name="dns_test_failed">Gagal terhubung: %s</string>
+    <string name="refresh">Segarkan</string>
+
+    <!-- BetterLyrics With Nodes -->
+    <string name="betterlyrics_with_nodes">With Nodes (Distribusi Super Cepat)</string>
+    <string name="betterlyrics_with_nodes_desc">Akselerasi distribusi lirik menggunakan custom edge node atau origin orchestrator (khusus betenode)</string>
+    <string name="betterlyrics_custom_node_url">URL Domain / Node Kustom</string>
+    <string name="betterlyrics_custom_node_url_desc">Atur endpoint domain BeteNode kustom (contoh: https://betenode.vercel.app atau https://expo.dako.web.id)</string>
+    <string name="betterlyrics_node_status">Status &amp; Telemetri With Nodes</string>
+    <string name="betterlyrics_node_status_desc">Periksa status kesehatan real-time, latensi, platform, dan cache hit rate node</string>
+    <string name="betterlyrics_test_node">Uji Koneksi</string>
+    <string name="betterlyrics_node_online">Online</string>
+    <string name="betterlyrics_node_offline">Offline</string>
+    <string name="betterlyrics_node_latency">Latensi</string>
+    <string name="betterlyrics_node_role">Peran</string>
+    <string name="betterlyrics_node_platform">Platform</string>
+    <string name="betterlyrics_node_cache_hit_rate">Tingkat Hit Cache</string>
+    <string name="betterlyrics_node_cached_items">Item di Cache</string>
+    <string name="betterlyrics_preset_node">Preset Node (Vercel)</string>
+    <string name="betterlyrics_preset_origin">Preset Origin (Dako)</string>
 </resources>
