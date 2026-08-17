@@ -19,9 +19,10 @@ import com.dd3boh.outertune.utils.potoken.PoTokenGenerator
 import com.dd3boh.outertune.utils.potoken.PoTokenResult
 import com.zionhuang.innertube.NewPipeUtils
 import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.YouTubeClient
+import com.zionhuang.innertube.models.YouTubeClient.Companion.ANDROID
 import com.zionhuang.innertube.models.YouTubeClient.Companion.ANDROID_VR_NO_AUTH
 import com.zionhuang.innertube.models.YouTubeClient.Companion.IOS
+import com.zionhuang.innertube.models.YouTubeClient.Companion.TVHTML5
 import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.zionhuang.innertube.models.response.PlayerResponse
 import okhttp3.OkHttpClient
@@ -52,12 +53,10 @@ object YTPlayerUtils {
      * Clients used for fallback streams in case the streams of the main client do not work.
      */
     private val STREAM_FALLBACK_CLIENTS: Array<YouTubeClient> = arrayOf(
-        // Could not parse deobfuscation function
-//        WEB_REMIX,
-//        ANDROID,
-//        TVHTML5,
-//        TVHTML5_SIMPLY_EMBEDDED_PLAYER,
-        IOS, // recent api changes produce error 403 after 30 seconds
+        WEB_REMIX,
+        IOS,
+        ANDROID,
+        TVHTML5,
     )
 
 
@@ -252,8 +251,13 @@ object YTPlayerUtils {
             val requestBuilder = okhttp3.Request.Builder()
                 .head()
                 .url(url)
+                .header("User-Agent", com.zionhuang.innertube.models.YouTubeClient.USER_AGENT_WEB)
+                .header("Referer", com.zionhuang.innertube.models.YouTubeClient.REFERER_YOUTUBE_MUSIC)
+                .header("Origin", com.zionhuang.innertube.models.YouTubeClient.ORIGIN_YOUTUBE_MUSIC)
             val response = httpClient.newCall(requestBuilder.build()).execute()
-            return response.isSuccessful
+            val isSuccess = response.isSuccessful
+            response.close()
+            return isSuccess
         } catch (e: Exception) {
             reportException(e)
         }

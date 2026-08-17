@@ -222,6 +222,9 @@ class MusicService : MediaLibraryService(),
 
     private var isAudioEffectSessionOpened = false
 
+    private val songUrlCache = HashMap<String, Pair<String, Long>>()
+    private val streamRetryCount = HashMap<String, Int>()
+
     var consecutivePlaybackErr = 0
 
     override fun onCreate() {
@@ -627,6 +630,19 @@ class MusicService : MediaLibraryService(),
     }
 
     private fun createCacheDataSource(): CacheDataSource.Factory {
+        val okHttpDataSourceFactory = OkHttpDataSource.Factory(
+            OkHttpClient.Builder()
+                .proxy(YouTube.proxy)
+                .build()
+        )
+            .setUserAgent(com.zionhuang.innertube.models.YouTubeClient.USER_AGENT_WEB)
+            .setDefaultRequestProperties(
+                mapOf(
+                    "Referer" to com.zionhuang.innertube.models.YouTubeClient.REFERER_YOUTUBE_MUSIC,
+                    "Origin" to com.zionhuang.innertube.models.YouTubeClient.ORIGIN_YOUTUBE_MUSIC,
+                )
+            )
+
         return CacheDataSource.Factory()
             .setCache(downloadCache)
             .setUpstreamDataSourceFactory(
@@ -635,11 +651,7 @@ class MusicService : MediaLibraryService(),
                     .setUpstreamDataSourceFactory(
                         DefaultDataSource.Factory(
                             this,
-                            OkHttpDataSource.Factory(
-                                OkHttpClient.Builder()
-                                    .proxy(YouTube.proxy)
-                                    .build()
-                            )
+                            okHttpDataSourceFactory
                         )
                     )
                     .setCacheWriteDataSinkFactory(
@@ -656,7 +668,6 @@ class MusicService : MediaLibraryService(),
     }
 
     private fun createDataSourceFactory(): DataSource.Factory {
-        val songUrlCache = HashMap<String, Pair<String, Long>>()
         return ResolvingDataSource.Factory(createCacheDataSource()) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
             Log.d(TAG, "PLAYING: song id = $mediaId")
@@ -909,8 +920,24 @@ class MusicService : MediaLibraryService(),
 
 // Player overrides
 
+    private fun findHttpException(throwable: Throwable?): androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException? {
+        var current = throwable
+        while (current != null) {
+            if (current is androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException) {
+                return current
+            }
+            current = current.cause
+        }
+        return null
+    }
+
     override fun onPlayerError(error: PlaybackException) {
         super.onPlayerError(error)
+
+        val currentMediaId = player.currentMediaItem?.mediaId
+        if (currentMediaId != null) {
+            songUrlCache.remove(currentMediaId)
+        }
 
         // wait for reconnection
         val isConnectionError = (error.cause?.cause is PlaybackException)
@@ -918,6 +945,19 @@ class MusicService : MediaLibraryService(),
         if (!isNetworkConnected.value || isConnectionError) {
             waitOnNetworkError()
             return
+        }
+
+        // Retry on 403 / 404 / 410 forbidden/expired stream errors
+        val httpException = findHttpException(error)
+        if (httpException != null && (httpException.responseCode == 403 || httpException.responseCode == 404 || httpException.responseCode == 410)) {
+            val retryCount = streamRetryCount.getOrDefault(currentMediaId ?: "", 0)
+            if (currentMediaId != null && retryCount < 2) {
+                streamRetryCount[currentMediaId] = retryCount + 1
+                Log.w(TAG, "Stream error (HTTP ${httpException.responseCode}), retrying fresh stream ($retryCount/2) for $currentMediaId")
+                player.prepare()
+                player.play()
+                return
+            }
         }
 
         if (dataStore.get(SkipOnErrorKey, false)) {
@@ -944,6 +984,7 @@ class MusicService : MediaLibraryService(),
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         super.onMediaItemTransition(mediaItem, reason)
+        mediaItem?.mediaId?.let { streamRetryCount.remove(it) }
         // +2 when and error happens, and -1 when transition. Thus when error, number increments by 1, else doesn't change
         if (consecutivePlaybackErr > 0) {
             consecutivePlaybackErr--

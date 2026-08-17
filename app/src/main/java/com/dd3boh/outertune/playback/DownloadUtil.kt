@@ -90,6 +90,13 @@ class DownloadUtil @Inject constructor(
                         .proxy(YouTube.proxy)
                         .build()
                 )
+                .setUserAgent(com.zionhuang.innertube.models.YouTubeClient.USER_AGENT_WEB)
+                .setDefaultRequestProperties(
+                    mapOf(
+                        "Referer" to com.zionhuang.innertube.models.YouTubeClient.REFERER_YOUTUBE_MUSIC,
+                        "Origin" to com.zionhuang.innertube.models.YouTubeClient.ORIGIN_YOUTUBE_MUSIC,
+                    )
+                )
             )
     ) { dataSpec ->
         val mediaId = dataSpec.key ?: error("No media id")
@@ -264,6 +271,13 @@ class DownloadUtil @Inject constructor(
                             OkHttpClient.Builder()
                                 .proxy(YouTube.proxy)
                                 .build()
+                        )
+                        .setUserAgent(com.zionhuang.innertube.models.YouTubeClient.USER_AGENT_WEB)
+                        .setDefaultRequestProperties(
+                            mapOf(
+                                "Referer" to com.zionhuang.innertube.models.YouTubeClient.REFERER_YOUTUBE_MUSIC,
+                                "Origin" to com.zionhuang.innertube.models.YouTubeClient.ORIGIN_YOUTUBE_MUSIC,
+                            )
                         )
                     )
             ) { dataSpec ->
