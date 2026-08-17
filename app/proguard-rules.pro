@@ -61,7 +61,8 @@
 -dontwarn org.slf4j.impl.StaticLoggerBinder
 
 ## Rules for NewPipeExtractor
--keep class org.schabi.newpipe.extractor.timeago.patterns.** { *; }
+-keep class org.schabi.newpipe.extractor.** { *; }
+-dontwarn org.schabi.newpipe.extractor.**
 -keep class org.mozilla.javascript.** { *; }
 -keep class org.mozilla.javascript.engine.** { *; }
 -dontwarn org.mozilla.javascript.JavaToJSONConverters
@@ -70,6 +71,8 @@
 -dontwarn javax.script.**
 -keep class jdk.dynalink.** { *; }
 -dontwarn jdk.dynalink.**
+-keep class com.google.protobuf.** { *; }
+-dontwarn com.google.protobuf.**
 # Rules for jsoup. See https://github.com/jhy/jsoup/issues/2459
 -dontwarn com.google.re2j.**
 

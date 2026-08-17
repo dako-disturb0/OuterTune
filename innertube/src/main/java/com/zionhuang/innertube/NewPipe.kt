@@ -14,12 +14,14 @@ import org.schabi.newpipe.extractor.exceptions.ParsingException
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
 import org.schabi.newpipe.extractor.services.youtube.YoutubeJavaScriptPlayerManager
 import java.io.IOException
-import java.net.Proxy
+import java.util.concurrent.TimeUnit
 
 private class NewPipeDownloaderImpl(proxy: Proxy?) : Downloader() {
 
     private val client = OkHttpClient.Builder()
         .proxy(proxy)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
     @Throws(IOException::class, ReCaptchaException::class)
@@ -33,6 +35,7 @@ private class NewPipeDownloaderImpl(proxy: Proxy?) : Downloader() {
             .method(httpMethod, dataToSend?.toRequestBody())
             .url(url)
             .addHeader("User-Agent", YouTubeClient.USER_AGENT_WEB)
+            .addHeader("Accept-Language", "en-US,en;q=0.9")
 
         headers.forEach { (headerName, headerValueList) ->
             if (headerValueList.size > 1) {
