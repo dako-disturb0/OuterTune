@@ -801,8 +801,8 @@ private fun BetterLyricsNodeCard(
                     ) {
                         StatChip(label = stringResource(R.string.betterlyrics_node_role), value = h.role)
                         StatChip(label = stringResource(R.string.betterlyrics_node_platform), value = h.platform)
-                        if (h.hitRate != null) {
-                            StatChip(label = stringResource(R.string.betterlyrics_node_cache_hit_rate), value = h.hitRate)
+                        h.hitRate?.let { hitRate ->
+                            StatChip(label = stringResource(R.string.betterlyrics_node_cache_hit_rate), value = hitRate)
                         }
                     }
                 }
