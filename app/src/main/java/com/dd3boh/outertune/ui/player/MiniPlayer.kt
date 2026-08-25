@@ -127,7 +127,7 @@ fun MiniPlayer(
 
     androidx.compose.material3.Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
         shadowElevation = 8.dp,
         tonalElevation = 6.dp,
         modifier = modifier
@@ -136,6 +136,19 @@ fun MiniPlayer(
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Horizontal))
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
+            // Progress micro-line pinned at the top edge of the card, giving the
+            // miniplayer its own identity against the navbar card below it
+            LinearProgressIndicator(
+                progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
+                drawStopIndicator = { },
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = Color.Transparent,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+            )
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -203,18 +216,6 @@ fun MiniPlayer(
                     )
                 }
             }
-
-            // Progress bar pinned at the very bottom of the surface
-            LinearProgressIndicator(
-                progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
-                drawStopIndicator = { },
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = Color.Transparent,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
-            )
         }
     }
 }
