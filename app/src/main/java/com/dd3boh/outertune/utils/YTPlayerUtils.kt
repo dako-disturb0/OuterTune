@@ -82,14 +82,6 @@ object YTPlayerUtils {
     ): Result<PlaybackData> = runCatching {
         Log.d(TAG, "Playback info requested: $videoId")
 
-        /**
-         * This is required for some clients to get working streams however
-         * it should not be forced for the [MAIN_CLIENT] because the response of the [MAIN_CLIENT]
-         * is required even if the streams won't work from this client.
-         * This is why it is allowed to be null.
-         */
-        val signatureTimestamp = getSignatureTimestampOrNull(videoId)
-
         val isLoggedIn = YouTube.cookie != null
         val sessionId =
             if (isLoggedIn) {
@@ -100,17 +92,43 @@ object YTPlayerUtils {
                 YouTube.visitorData
             }
 
-        Log.d(TAG, "[$videoId] signatureTimestamp: $signatureTimestamp, isLoggedIn: $isLoggedIn")
+        /**
+         * PoToken minting (BotGuard via WebView) and the signature timestamp fetch are
+         * expensive (seconds on cold start). Neither is used by [MAIN_CLIENT], so both are
+         * resolved lazily, only when a client that actually needs them is being tried.
+         * This keeps the fast path at a single player request.
+         */
+        var cachedSignatureTimestamp: Int? = null
+        var signatureTimestampFetched = false
+        suspend fun signatureTimestamp(): Int? {
+            if (!signatureTimestampFetched) {
+                signatureTimestampFetched = true
+                cachedSignatureTimestamp = getSignatureTimestampOrNull(videoId)
+                Log.d(TAG, "[$videoId] signatureTimestamp: $cachedSignatureTimestamp")
+            }
+            return cachedSignatureTimestamp
+        }
 
-        val (webPlayerPot, webStreamingPot) = getWebClientPoTokenOrNull(videoId, sessionId)?.let {
-            Pair(it.playerRequestPoToken, it.streamingDataPoToken)
-        } ?: Pair(null, null).also {
-            Log.w(TAG, "[$videoId] No po token")
+        var cachedPoToken: Pair<String?, String?>? = null
+        suspend fun poToken(): Pair<String?, String?> {
+            if (cachedPoToken == null) {
+                cachedPoToken = getWebClientPoTokenOrNull(videoId, sessionId)?.let {
+                    Pair(it.playerRequestPoToken, it.streamingDataPoToken)
+                } ?: Pair(null, null).also {
+                    Log.w(TAG, "[$videoId] No po token")
+                }
+            }
+            return cachedPoToken!!
         }
 
         val mainPlayerResponse =
-            YouTube.player(videoId, playlistId, MAIN_CLIENT, signatureTimestamp, webPlayerPot)
-                .getOrThrow()
+            YouTube.player(
+                videoId,
+                playlistId,
+                MAIN_CLIENT,
+                if (MAIN_CLIENT.useSignatureTimestamp) signatureTimestamp() else null,
+                if (MAIN_CLIENT.useWebPoTokens) poToken().first else null,
+            ).getOrThrow()
 
         val audioConfig = mainPlayerResponse.playerConfig?.audioConfig
         val videoDetails = mainPlayerResponse.videoDetails
@@ -145,8 +163,13 @@ object YTPlayerUtils {
                 }
 
                 streamPlayerResponse =
-                    YouTube.player(videoId, playlistId, client, signatureTimestamp, webPlayerPot)
-                        .getOrNull()
+                    YouTube.player(
+                        videoId,
+                        playlistId,
+                        client,
+                        if (client.useSignatureTimestamp) signatureTimestamp() else null,
+                        if (client.useWebPoTokens) poToken().first else null,
+                    ).getOrNull()
             }
 
             Log.d(TAG, "[$videoId] stream client: ${client.clientName}, " +
@@ -166,10 +189,23 @@ object YTPlayerUtils {
                 streamExpiresInSeconds =
                     streamPlayerResponse.streamingData?.expiresInSeconds ?: continue
 
-                if (client.useWebPoTokens && webStreamingPot != null) {
-                    streamUrl += "&pot=$webStreamingPot";
+                if (client.useWebPoTokens) {
+                    val webStreamingPot = poToken().second
+                    if (webStreamingPot != null) {
+                        streamUrl += "&pot=$webStreamingPot"
+                    }
                 }
 
+                if (clientIndex == -1) {
+                    /**
+                     * Skip [validateStatus] for the main client: the HEAD probe adds a
+                     * round-trip to every resolve, and main client urls can 403 on HEAD
+                     * while serving fine on the byte-range GET ExoPlayer performs.
+                     * A rejected url is recovered by the player error handler instead.
+                     */
+                    Log.i(TAG, "[$videoId] [${client.clientName}] using main client stream")
+                    break
+                }
                 if (clientIndex == STREAM_FALLBACK_CLIENTS.size - 1) {
                     /** skip [validateStatus] for last client */
                     break
