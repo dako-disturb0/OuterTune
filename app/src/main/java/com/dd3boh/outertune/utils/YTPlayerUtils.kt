@@ -277,7 +277,7 @@ object YTPlayerUtils {
 
         Log.d(TAG, "[$videoId] stream url: $streamUrl")
 
-        PlaybackData(
+        return PlaybackData(
             audioConfig,
             videoDetails,
             playbackTracking,
