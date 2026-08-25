@@ -119,6 +119,8 @@ fun YouTubeBrowseScreen(
                                             coroutineScope = coroutineScope,
                                             onDismiss = menuState::dismiss
                                         )
+
+                                        else -> {}
                                     }
                                 }
                             }
@@ -146,6 +148,7 @@ fun YouTubeBrowseScreen(
                                 is AlbumItem -> navController.navigate("album/${item.id}")
                                 is ArtistItem -> navController.navigate("artist/${item.id}")
                                 is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
+                                else -> {}
                             }
                         }
                         .animateItem()

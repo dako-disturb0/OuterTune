@@ -291,6 +291,7 @@ fun HomeScreen(
                             is AlbumItem -> navController.navigate("album/${item.id}")
                             is ArtistItem -> navController.navigate("artist/${item.id}")
                             is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
+                            else -> {}
                         }
                     },
                     onLongClick = {
@@ -320,6 +321,8 @@ fun HomeScreen(
                                     coroutineScope = scope,
                                     onDismiss = menuState::dismiss
                                 )
+
+                                else -> {}
                             }
                         }
                     }
@@ -809,6 +812,8 @@ fun HomeScreen(
                         is PlaylistItem -> luckyItem.playEndpoint?.let {
                             playerConnection.playQueue(YouTubeQueue(it), isRadio = true)
                         }
+
+                        else -> {}
                     }
                 }
             }
