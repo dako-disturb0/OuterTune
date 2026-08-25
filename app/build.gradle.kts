@@ -23,7 +23,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "app.dkdstrb.excitedtune"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "app.dkdstrb.excitedtune"
@@ -252,7 +252,7 @@ dependencies {
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
 
-    coreLibraryDesugaring(libs.desugaring)
+    coreLibraryDesugaring(libs.desugaring.nio)
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.serialization.json)

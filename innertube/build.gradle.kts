@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.metrolist.innertube"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 25
