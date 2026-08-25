@@ -81,6 +81,14 @@ class DownloadUtil @Inject constructor(
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
     private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
     private val songUrlCache = HashMap<String, Pair<String, Long>>()
+
+    /**
+     * Drop a cached stream url, e.g. when it got rejected with HTTP 403/410,
+     * so the next access resolves a fresh one
+     */
+    fun invalidateSongUrl(mediaId: String) {
+        songUrlCache.remove(mediaId)
+    }
     private val dataSourceFactory = ResolvingDataSource.Factory(
         CacheDataSource.Factory()
             .setCache(playerCache)

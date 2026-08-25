@@ -40,6 +40,7 @@ import androidx.media3.common.Timeline
 import androidx.media3.common.audio.SonicAudioProcessor
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
@@ -223,6 +224,20 @@ class MusicService : MediaLibraryService(),
     private var isAudioEffectSessionOpened = false
 
     var consecutivePlaybackErr = 0
+
+    // Stream url cache is shared with the data source resolver so that rejected
+    // urls (e.g. HTTP 403) can be invalidated from onPlayerError and refreshed
+    private val songUrlCache = HashMap<String, Pair<String, Long>>()
+    private val streamRetryCount = mutableMapOf<String, Int>()
+
+    /**
+     * How many times a single media item may be retried with a fresh stream url
+     * after being rejected mid-playback, before regular error handling kicks in
+     */
+    private val maxStreamRetries = 1
+
+    // Stream urls typically expire some time before the api-reported expiry
+    private val streamExpirySafetyMs = 60_000L
 
     override fun onCreate() {
         Log.i(TAG, "Starting MusicService")
@@ -656,7 +671,6 @@ class MusicService : MediaLibraryService(),
     }
 
     private fun createDataSourceFactory(): DataSource.Factory {
-        val songUrlCache = HashMap<String, Pair<String, Long>>()
         return ResolvingDataSource.Factory(createCacheDataSource()) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
             Log.d(TAG, "PLAYING: song id = $mediaId")
@@ -761,7 +775,8 @@ class MusicService : MediaLibraryService(),
             val streamUrl = playbackData.streamUrl
 
             songUrlCache[mediaId] =
-                streamUrl to System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)
+                streamUrl to System.currentTimeMillis() +
+                        (playbackData.streamExpiresInSeconds * 1000L - streamExpirySafetyMs).coerceAtLeast(30_000L)
             dataSpec.withUri(streamUrl.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
         }
     }
@@ -877,6 +892,21 @@ class MusicService : MediaLibraryService(),
         Toast.makeText(this@MusicService, getString(R.string.wait_to_reconnect), Toast.LENGTH_LONG).show()
     }
 
+    /**
+     * Walk the error cause chain looking for an HTTP response code reported by the
+     * http data source. Returns null when this was not a http related error.
+     */
+    private fun findHttpStatus(error: PlaybackException): Int? {
+        var cause: Throwable? = error.cause
+        while (cause != null) {
+            if (cause is HttpDataSource.InvalidResponseCodeException) {
+                return cause.responseCode
+            }
+            cause = cause.cause
+        }
+        return null
+    }
+
     fun skipOnError() {
         /**
          * Auto skip to the next media item on error.
@@ -912,6 +942,28 @@ class MusicService : MediaLibraryService(),
     override fun onPlayerError(error: PlaybackException) {
         super.onPlayerError(error)
 
+        // Stream url rejected mid-playback (e.g. 403/410 from expired or throttled urls):
+        // drop the cached url and retry once with a freshly resolved one before giving up
+        val httpStatus = findHttpStatus(error)
+        if (httpStatus == 403 || httpStatus == 410) {
+            val mediaId = player.currentMediaItem?.mediaId
+            if (mediaId != null) {
+                songUrlCache.remove(mediaId)
+                downloadUtil.invalidateSongUrl(mediaId)
+                val retries = streamRetryCount[mediaId] ?: 0
+                if (retries < maxStreamRetries) {
+                    streamRetryCount[mediaId] = retries + 1
+                    Log.w(TAG, "Stream rejected with HTTP $httpStatus ($mediaId), refreshing url and retrying")
+                    player.seekTo(player.currentMediaItemIndex, player.currentPosition)
+                    player.prepare()
+                    player.play()
+                    return
+                }
+                streamRetryCount.remove(mediaId)
+                Log.w(TAG, "Stream still rejected after retry ($mediaId)")
+            }
+        }
+
         // wait for reconnection
         val isConnectionError = (error.cause?.cause is PlaybackException)
                 && (error.cause?.cause as PlaybackException).errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
@@ -944,6 +996,7 @@ class MusicService : MediaLibraryService(),
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         super.onMediaItemTransition(mediaItem, reason)
+        streamRetryCount.clear()
         // +2 when and error happens, and -1 when transition. Thus when error, number increments by 1, else doesn't change
         if (consecutivePlaybackErr > 0) {
             consecutivePlaybackErr--
