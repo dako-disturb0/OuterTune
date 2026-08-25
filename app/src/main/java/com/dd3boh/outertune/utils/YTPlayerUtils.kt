@@ -28,11 +28,13 @@ import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.zionhuang.innertube.models.response.PlayerResponse
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 
 object YTPlayerUtils {
 
     private const val TAG = "YTPlayerUtils"
+    private const val DEFAULT_STREAM_EXPIRE_SECONDS = 300
 
     private val httpClient = OkHttpClient.Builder()
         .proxy(YouTube.proxy)
@@ -70,6 +72,27 @@ object YTPlayerUtils {
         val streamUrl: String,
         val streamExpiresInSeconds: Int,
     )
+
+    private fun resolveExpireSeconds(
+        apiExpire: Int?,
+        streamUrl: String?,
+    ): Int {
+        apiExpire?.let { return it }
+        streamUrl?.let { url ->
+            val expireTimestamp = url.toHttpUrlOrNull()
+                ?.queryParameter("expire")
+                ?.toLongOrNull()
+            if (expireTimestamp != null) {
+                val remaining = ((expireTimestamp * 1000L - System.currentTimeMillis()) / 1000L).toInt()
+                if (remaining > 0) {
+                    Log.w(TAG, "Using expire time extracted from stream URL: ${remaining}s")
+                    return remaining
+                }
+            }
+        }
+        Log.w(TAG, "No expire time available from API or URL, using default: ${DEFAULT_STREAM_EXPIRE_SECONDS}s")
+        return DEFAULT_STREAM_EXPIRE_SECONDS
+    }
 
     /**
      * Custom player response intended to use for playback.
@@ -222,7 +245,10 @@ object YTPlayerUtils {
                     ) ?: continue
                 streamUrl = findUrlOrNull(format, videoId) ?: continue
                 streamExpiresInSeconds =
-                    streamPlayerResponse.streamingData?.expiresInSeconds ?: continue
+                    resolveExpireSeconds(
+                        apiExpire = streamPlayerResponse.streamingData?.expiresInSeconds,
+                        streamUrl = streamUrl,
+                    )
 
                 if (client.useWebPoTokens) {
                     val webStreamingPot = poToken().second
