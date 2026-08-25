@@ -291,14 +291,14 @@ object YTPlayerUtils {
                 PlaybackException.ERROR_CODE_REMOTE_ERROR
             )
         }
-        if (streamExpiresInSeconds == null) {
-            throw Exception("Missing stream expire time")
-        }
         if (format == null) {
             throw Exception("Could not find format")
         }
         if (streamUrl == null) {
             throw Exception("Could not find stream url")
+        }
+        if (streamExpiresInSeconds == null) {
+            throw Exception("Missing stream expire time")
         }
 
         Log.d(TAG, "[$videoId] stream url: $streamUrl")
@@ -326,16 +326,50 @@ object YTPlayerUtils {
         playerResponse: PlayerResponse,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
-    ): PlayerResponse.StreamingData.Format? =
-        playerResponse.streamingData?.adaptiveFormats
-            ?.filter { it.isAudio }
-            ?.maxByOrNull {
-                it.bitrate * when (audioQuality) {
-                    AudioQuality.AUTO -> if (connectivityManager.isActiveNetworkMetered) -1 else 1
-                    AudioQuality.HIGH -> 1
-                    AudioQuality.LOW -> -1
-                } + (if (it.mimeType.startsWith("audio/webm")) 10240 else 0) // prefer opus stream
+    ): PlayerResponse.StreamingData.Format? {
+        val adaptiveFormats = playerResponse.streamingData?.adaptiveFormats ?: return null
+
+        val audioCapableFormats = adaptiveFormats.filter { it.isAudio }
+        if (audioCapableFormats.isEmpty()) return null
+
+        val maxBitrate = audioCapableFormats.maxOfOrNull { it.bitrate } ?: return null
+
+        fun scoreCodec(mimeType: String): Int = when {
+            mimeType.contains("opus", ignoreCase = true) -> 2
+            mimeType.contains("mp4a", ignoreCase = true) -> 1
+            else -> 0
+        }
+
+        return when (audioQuality) {
+            AudioQuality.HIGH -> audioCapableFormats.maxWithOrNull(
+                compareBy<PlayerResponse.StreamingData.Format> { format ->
+                    when (format.audioQuality) {
+                        "AUDIO_QUALITY_HIGH" -> 3
+                        "AUDIO_QUALITY_MEDIUM" -> 2
+                        "AUDIO_QUALITY_LOW" -> 1
+                        else -> 0
+                    }
+                }.thenBy { it.audioChannels ?: 2 }
+                    .thenBy { scoreCodec(it.mimeType) }
+                    .thenBy { it.bitrate }
+            )
+
+            AudioQuality.LOW -> {
+                val cappedFormats = audioCapableFormats.filter { it.bitrate <= 128_000 }
+                cappedFormats.maxByOrNull { it.bitrate }
+                    ?: audioCapableFormats.minByOrNull { kotlin.math.abs(it.bitrate.toDouble() - 128_000.0) }
+                    ?: audioCapableFormats.maxByOrNull { it.bitrate }
             }
+
+            AudioQuality.AUTO -> {
+                val targetBitrate = if (connectivityManager.isActiveNetworkMetered) 128_000.0 else maxBitrate.toDouble()
+                val cappedFormats = audioCapableFormats.filter { it.bitrate <= targetBitrate }
+                cappedFormats.maxByOrNull { it.bitrate }
+                    ?: audioCapableFormats.minByOrNull { kotlin.math.abs(it.bitrate.toDouble() - targetBitrate) }
+                    ?: audioCapableFormats.maxByOrNull { it.bitrate }
+            }
+        }
+    }
 
     /**
      * Checks if the stream url returns a successful status.
@@ -375,6 +409,11 @@ object YTPlayerUtils {
         format: PlayerResponse.StreamingData.Format,
         videoId: String
     ): String? {
+        // Prefer the URL provided by the API directly; it needs no deobfuscation and
+        // avoids NewPipe's player fetch failing on otherwise playable formats.
+        if (!format.url.isNullOrEmpty()) {
+            return format.url
+        }
         return NewPipeUtils.getStreamUrl(format, videoId)
             .onFailure {
                 reportException(it)
