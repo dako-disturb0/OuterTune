@@ -70,6 +70,9 @@ class App : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
 
+        // leafx: bersihkan database/sesi corrupt sebelum komponen lain menyentuh storage
+        Leafx.handle(this)
+
         if (BuildConfig.DEBUG) {
             System.setProperty("kotlinx.coroutines.debug", "on")
         }

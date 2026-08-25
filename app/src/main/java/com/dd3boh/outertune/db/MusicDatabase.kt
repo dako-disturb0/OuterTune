@@ -127,8 +127,10 @@ abstract class InternalDatabase : RoomDatabase() {
         const val DB_NAME = "song.db"
         const val TEST_DB_NAME = "probe_song.db"
 
-        fun newInstance(context: Context): MusicDatabase =
-            MusicDatabase(
+        fun newInstance(context: Context): MusicDatabase {
+            // leafx: karantina DB dengan skema tak kompatibel/korup sebelum Room membukanya
+            com.dd3boh.outertune.Leafx.recoverDatabase(context)
+            return MusicDatabase(
                 delegate = Room.databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
                     .addMigrations(MIGRATION_1_2)
                     .addMigrations(MIGRATION_14_15)
@@ -136,6 +138,7 @@ abstract class InternalDatabase : RoomDatabase() {
                     .addMigrations(MIGRATION_16_17)
                     .build()
             )
+        }
 
         // keep this separate in the rare case we come across concepts of a plan to support migrations from other forks
         fun newTestInstance(context: Context, dbName: String): MusicDatabase =
