@@ -220,6 +220,8 @@ fun OnlineSearchScreen(
                                                 coroutineScope = scope,
                                                 onDismiss = menuState::dismiss,
                                             )
+
+                                        else -> {}
                                     }
                                 }
                             }
@@ -264,6 +266,8 @@ fun OnlineSearchScreen(
                                     navController.navigate("online_playlist/${item.id}")
                                     onDismiss()
                                 }
+
+                                else -> {}
                             }
                         }
                         .animateItem()

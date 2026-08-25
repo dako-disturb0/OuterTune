@@ -35,6 +35,7 @@ object YTPlayerUtils {
     private const val TAG = "YTPlayerUtils"
 
     private val httpClient = OkHttpClient.Builder()
+        .dns(DnsHelper.getActiveDns())
         .proxy(YouTube.proxy)
         .build()
 

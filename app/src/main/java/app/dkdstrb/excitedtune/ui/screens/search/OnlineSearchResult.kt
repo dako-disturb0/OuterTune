@@ -153,6 +153,8 @@ fun OnlineSearchResult(
                                             coroutineScope = coroutineScope,
                                             onDismiss = menuState::dismiss
                                         )
+
+                                        else -> {}
                                     }
                                 }
                             }
@@ -192,6 +194,7 @@ fun OnlineSearchResult(
                                     is AlbumItem -> navController.navigate("album/${item.id}")
                                     is ArtistItem -> navController.navigate("artist/${item.id}")
                                     is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
+                                    else -> {}
                                 }
                             },
                             onLongClick = {

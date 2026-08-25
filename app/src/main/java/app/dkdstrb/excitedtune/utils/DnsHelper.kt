@@ -7,7 +7,6 @@ import app.dkdstrb.excitedtune.constants.DnsEnabledKey
 import app.dkdstrb.excitedtune.constants.DnsMode
 import app.dkdstrb.excitedtune.constants.DnsModeKey
 import app.dkdstrb.excitedtune.extensions.toEnum
-import com.metrolist.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Dns
@@ -43,13 +42,8 @@ object DnsHelper {
 
         activeDnsInstance = createDns(context, enabled, mode, customUrl)
         Log.d(TAG, "DNS updated: enabled=$enabled, mode=$mode, instance=$activeDnsInstance")
-
-        // Apply to YouTube Innertube client
-        try {
-            YouTube.dns = if (enabled && mode != DnsMode.OFF) activeDnsInstance else null
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to apply DNS to YouTube Innertube: ${e.message}")
-        }
+        // Applied to app-owned OkHttp clients (e.g. YTPlayerUtils) via getActiveDns().
+        // The Metrolist innertube module no longer exposes a global dns hook.
     }
 
     private fun createDns(
