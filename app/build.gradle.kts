@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 36
         versionCode = 71
         versionName = "0.10.2-b1"
