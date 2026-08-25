@@ -227,7 +227,7 @@ class MusicService : MediaLibraryService(),
 
     // Stream url cache is shared with the data source resolver so that rejected
     // urls (e.g. HTTP 403) can be invalidated from onPlayerError and refreshed
-    private val songUrlCache = HashMap<String, Pair<String, Long>>()
+    private val songUrlCache = java.util.concurrent.ConcurrentHashMap<String, Pair<String, Long>>()
     private val streamRetryCount = mutableMapOf<String, Int>()
 
     /**
@@ -893,6 +893,40 @@ class MusicService : MediaLibraryService(),
     }
 
     /**
+     * Resolve the next queue item's stream url in the background so switching to
+     * the next song does not wait for a player response round-trip.
+     * Must be called from the main thread (player access).
+     */
+    private fun prefetchNextStream() {
+        val nextIndex = player.nextMediaItemIndex
+        if (nextIndex == C.INDEX_UNSET) return
+        val nextId = player.getMediaItemAt(nextIndex).mediaId
+
+        offloadScope.launch {
+            try {
+                val cached = songUrlCache[nextId]
+                if (cached != null && cached.second > System.currentTimeMillis()) return@launch
+
+                Log.d(TAG, "Prefetching stream for next song: $nextId")
+                val audioQuality by enumPreference(this@MusicService, AudioQualityKey, AudioQuality.AUTO)
+                val playbackData = YTPlayerUtils.playerResponseForPlayback(
+                    nextId,
+                    audioQuality = audioQuality,
+                    connectivityManager = connectivityManager,
+                ).getOrNull() ?: return@launch
+
+                songUrlCache[nextId] = playbackData.streamUrl to
+                        System.currentTimeMillis() +
+                        (playbackData.streamExpiresInSeconds * 1000L - streamExpirySafetyMs).coerceAtLeast(30_000L)
+                Log.d(TAG, "Prefetched stream for next song: $nextId")
+            } catch (e: Exception) {
+                // Prefetching is best-effort only; normal resolution handles failures
+                Log.w(TAG, "Stream prefetch failed: ${e.message}")
+            }
+        }
+    }
+
+    /**
      * Walk the error cause chain looking for an HTTP response code reported by the
      * http data source. Returns null when this was not a http related error.
      */
@@ -990,6 +1024,8 @@ class MusicService : MediaLibraryService(),
             val pos = player.currentPosition
             val q = queueBoard.value.getCurrentQueue()
             q?.lastSongPos = pos
+        } else {
+            prefetchNextStream()
         }
         super.onIsPlayingChanged(isPlaying)
     }
@@ -997,6 +1033,7 @@ class MusicService : MediaLibraryService(),
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         super.onMediaItemTransition(mediaItem, reason)
         streamRetryCount.clear()
+        if (player.isPlaying) prefetchNextStream()
         // +2 when and error happens, and -1 when transition. Thus when error, number increments by 1, else doesn't change
         if (consecutivePlaybackErr > 0) {
             consecutivePlaybackErr--
