@@ -133,8 +133,9 @@ fun OuterTuneTheme(
         }
     }
 
-    val typography = remember(aurora) {
-        if (aurora) auroraTypography(MaterialTheme.typography) else MaterialTheme.typography
+    val baseTypography = MaterialTheme.typography
+    val typography = remember(aurora, baseTypography) {
+        if (aurora) auroraTypography(baseTypography) else baseTypography
     }
 
     MaterialTheme(
