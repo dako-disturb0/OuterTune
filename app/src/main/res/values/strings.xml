@@ -239,6 +239,8 @@ We recycle translations from upstream, they are pulled periodically. -->
     <string name="appearance">Appearance</string>
     <string name="theme">Theme</string>
     <string name="enable_dynamic_theme">Enable dynamic theme</string>
+    <string name="aurora_theme">Aurora theme</string>
+    <string name="aurora_theme_description">Dark-first palette with electric violet accent and Sora typography</string>
     <string name="dark_theme">Dark theme</string>
     <string name="dark_theme_on">On</string>
     <string name="dark_theme_off">Off</string>

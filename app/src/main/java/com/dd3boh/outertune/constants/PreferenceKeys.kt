@@ -21,6 +21,7 @@ val PlayerCustomColorPaletteKey = stringPreferencesKey("playerCustomColorPalette
 val PlayerEdgeToEdgeModeKey = stringPreferencesKey("playerEdgeToEdgeMode") // "spacing" | "hide_navbar"
 val DarkModeKey = stringPreferencesKey("darkMode")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
+val AuroraThemeKey = booleanPreferencesKey("auroraTheme")
 val ShowLikedAndDownloadedPlaylist = booleanPreferencesKey("showLikedAndDownloadedPlaylist")
 val SwipeToQueueKey = booleanPreferencesKey("swipeToQueue")
 val FlatSubfoldersKey = booleanPreferencesKey("flatSubfolders")

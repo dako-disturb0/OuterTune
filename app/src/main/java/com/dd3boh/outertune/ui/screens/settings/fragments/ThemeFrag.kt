@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AspectRatio
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Contrast
@@ -80,6 +81,7 @@ import com.dd3boh.outertune.constants.DEFAULT_PLAYER_BACKGROUND
 import com.dd3boh.outertune.constants.DarkMode
 import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.DynamicThemeKey
+import com.dd3boh.outertune.constants.AuroraThemeKey
 import com.dd3boh.outertune.constants.HighContrastKey
 import com.dd3boh.outertune.constants.PlayerBackgroundStyle
 import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
@@ -104,6 +106,15 @@ fun ColumnScope.ThemeAppFrag() {
     val (dynamicTheme, onDynamicThemeChange) = rememberPreference(DynamicThemeKey, defaultValue = true)
     val (highContrastCompat, onHccChange) = rememberPreference(HighContrastKey, defaultValue = false)
     val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = false)
+    val (auroraTheme, onAuroraThemeChange) = rememberPreference(AuroraThemeKey, defaultValue = false)
+
+    SwitchPreference(
+        title = { Text(stringResource(R.string.aurora_theme)) },
+        description = stringResource(R.string.aurora_theme_description),
+        icon = { Icon(Icons.Rounded.AutoAwesome, null) },
+        checked = auroraTheme,
+        onCheckedChange = onAuroraThemeChange
+    )
 
     SwitchPreference(
         title = { Text(stringResource(R.string.enable_dynamic_theme)) },

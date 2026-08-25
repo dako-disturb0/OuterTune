@@ -60,6 +60,7 @@ fun OuterTuneTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     pureBlack: Boolean = false,
     highContrastCompat: Boolean,
+    aurora: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -68,7 +69,8 @@ fun OuterTuneTheme(
         mutableStateOf(DefaultThemeColor)
     }
 
-    LaunchedEffect(playerConnection, enableDynamicTheme, isSystemInDarkTheme) {
+    LaunchedEffect(playerConnection, enableDynamicTheme, isSystemInDarkTheme, aurora) {
+        if (aurora) return@LaunchedEffect
         val playerConnection = playerConnection
         if (!enableDynamicTheme || playerConnection == null) {
             themeColor = DefaultThemeColor
@@ -102,8 +104,10 @@ fun OuterTuneTheme(
     }
 
 
-    val colorScheme = remember(darkTheme, pureBlack, themeColor) {
-       if (themeColor == DefaultThemeColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val colorScheme = remember(darkTheme, pureBlack, themeColor, aurora) {
+        if (aurora) {
+            auroraColorScheme(darkTheme, pureBlack)
+        } else if (themeColor == DefaultThemeColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val systemTheme = if (darkTheme) {
                 dynamicDarkColorScheme(context).pureBlack(pureBlack)
             } else {
@@ -129,9 +133,13 @@ fun OuterTuneTheme(
         }
     }
 
+    val typography = remember(aurora) {
+        if (aurora) auroraTypography(MaterialTheme.typography) else MaterialTheme.typography
+    }
+
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = MaterialTheme.typography,
+        typography = typography,
         content = content
     )
 }
