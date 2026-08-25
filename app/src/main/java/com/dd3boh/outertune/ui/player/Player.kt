@@ -70,7 +70,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -78,6 +77,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -126,12 +126,10 @@ import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.PlayerBackgroundStyle
 import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
-import com.dd3boh.outertune.constants.PlayerTimelineSizeKey
-import com.dd3boh.outertune.constants.PlayerTimelineType
-import com.dd3boh.outertune.constants.PlayerTimelineTypeKey
 import com.dd3boh.outertune.constants.QueuePeekHeight
 import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
+import com.dd3boh.outertune.constants.ShowInlineInfoKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.SwipeToSkipKey
 import com.dd3boh.outertune.extensions.isPowerSaver
@@ -144,7 +142,6 @@ import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.playback.QueueBoard
 import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
-import com.dd3boh.outertune.ui.component.PlayerSliderTrack
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.button.ResizableIconButton
 import com.dd3boh.outertune.ui.component.collapsedAnchor
@@ -536,6 +533,26 @@ fun LandscapePlayer(
 // Audio Quality Badge  (kHz / kbps)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Builds the "Show Inline Info" label: "<bitrate>kbps [<buffer>]% <codec>",
+ * e.g. "256kbps [73]% AAC". The buffer percentage tells how much of the
+ * stream is already fetched and playable without further network access.
+ */
+private fun inlinePlaybackInfo(bitrate: Int?, mimeType: String?, bufferedPercent: Int): String {
+    val kbps = if (bitrate != null && bitrate > 0) "${bitrate / 1000}kbps" else "--kbps"
+    val codec = when {
+        mimeType == null -> "--"
+        mimeType.contains("mp4a") || mimeType.contains("m4a") -> "AAC"
+        mimeType.contains("opus") || mimeType.contains("webm") -> "Opus"
+        mimeType.contains("flac") -> "FLAC"
+        mimeType.contains("mp3") || mimeType.contains("mpeg") -> "MP3"
+        mimeType.contains("wav") || mimeType.contains("raw") -> "WAV"
+        mimeType.contains("amr") -> "AMR"
+        else -> mimeType.substringAfter('/').uppercase()
+    }
+    return "$kbps [$bufferedPercent]% $codec"
+}
+
 @Composable
 fun AudioQualityBadge(
     sampleRate: Int?,
@@ -671,15 +688,8 @@ fun ControlsContent(
         key = SeekIncrementKey,
         defaultValue = SeekIncrement.OFF
     )
-    val timelineType by rememberEnumPreference(
-        key = PlayerTimelineTypeKey,
-        defaultValue = PlayerTimelineType.PIN_BAR
-    )
-    val timelineSize by rememberPreference(
-        key = PlayerTimelineSizeKey,
-        defaultValue = 8
-    )
     val showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
+    val showInlineInfo by rememberPreference(ShowInlineInfoKey, defaultValue = false)
 
     val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
     val isSystemInDarkTheme = isSystemInDarkTheme()
@@ -687,20 +697,12 @@ fun ControlsContent(
         if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
     }
 
-    val playerBackground by rememberEnumPreference(
-        key = PlayerBackgroundStyleKey,
-        defaultValue = DEFAULT_PLAYER_BACKGROUND
-    )
-
-    val onBackgroundColor = when (playerBackground) {
-        PlayerBackgroundStyle.FOLLOW_THEME -> MaterialTheme.colorScheme.secondary
-        else ->
-            if (useDarkTheme) MaterialTheme.colorScheme.onSurface
-            else {
-                val c = MaterialTheme.colorScheme.secondary
-                c.copy(alpha = 1f, red = c.red - 0.2f, green = c.green - 0.2f, blue = c.blue - 0.2f)
-            }
-    }
+    val onBackgroundColor =
+        if (useDarkTheme) MaterialTheme.colorScheme.onSurface
+        else {
+            val c = MaterialTheme.colorScheme.secondary
+            c.copy(alpha = 1f, red = c.red - 0.2f, green = c.green - 0.2f, blue = c.blue - 0.2f)
+        }
 
     val playbackState by playerConnection.playbackState.collectAsState()
     var duration by rememberSaveable(playbackState) {
@@ -709,6 +711,9 @@ fun ControlsContent(
     var position by remember(playbackState) {
         mutableLongStateOf(playerConnection.player.currentPosition)
     }
+    var bufferedPercent by remember(playbackState) {
+        mutableIntStateOf(playerConnection.player.bufferedPercentage)
+    }
 
     LaunchedEffect(playbackState) {
         if (playbackState == STATE_READY) {
@@ -716,6 +721,7 @@ fun ControlsContent(
                 delay(500)
                 position = playerConnection.player.currentPosition
                 duration = playerConnection.player.duration
+                bufferedPercent = playerConnection.player.bufferedPercentage
             }
         }
     }
@@ -823,7 +829,7 @@ fun ControlsContent(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Seek slider ────────────────────────────────────────────────
+            // ── Seek slider (Material 3 default style) ─────────────────────
             Slider(
                 value = (sliderPosition ?: position).toFloat(),
                 valueRange = 0f..(if (duration == C.TIME_UNSET) 0f else duration.toFloat()),
@@ -836,19 +842,10 @@ fun ControlsContent(
                     sliderPosition = null
                     haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                 },
-                thumb = { Spacer(modifier = Modifier.size(0.dp)) },
-                track = { sliderState ->
-                    PlayerSliderTrack(
-                        sliderState = sliderState,
-                        colors = SliderDefaults.colors(),
-                        timelineType = timelineType,
-                        trackHeight = timelineSize.dp,
-                    )
-                },
                 modifier = Modifier.padding(horizontal = PlayerHorizontalPadding)
             )
 
-            // ── Position / Duration labels ─────────────────────────────────
+            // ── Position / inline info / Duration labels ───────────────────
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -863,6 +860,22 @@ fun ControlsContent(
                     color = onBackgroundColor.copy(alpha = 0.6f),
                     maxLines = 1,
                 )
+                if (showInlineInfo) {
+                    Text(
+                        text = inlinePlaybackInfo(
+                            bitrate = currentFormat?.bitrate,
+                            mimeType = currentFormat?.mimeType,
+                            bufferedPercent = bufferedPercent,
+                        ),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 11.sp,
+                        color = onBackgroundColor.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 Text(
                     text = if (duration != C.TIME_UNSET) makeTimeString(duration) else "",
                     fontFamily = FontFamily.Monospace,

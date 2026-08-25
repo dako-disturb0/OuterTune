@@ -241,6 +241,13 @@ We recycle translations from upstream, they are pulled periodically. -->
     <string name="enable_dynamic_theme">Enable dynamic theme</string>
     <string name="aurora_theme">Aurora theme</string>
     <string name="aurora_theme_description">Dark-first palette with electric violet accent and Sora typography</string>
+    <string name="player_background_dynamic_light">Dynamic light (from cover)</string>
+    <string name="player_background_from_image">From image (color palette)</string>
+    <string name="timeline_type_default">Material 3 default</string>
+    <string name="auto_crop_thumbnail">Auto-crop thumbnail</string>
+    <string name="auto_crop_thumbnail_description">Crop the artwork to a square when it is not square</string>
+    <string name="show_inline_info">Show inline playback info</string>
+    <string name="show_inline_info_description">Bitrate, buffer percentage and codec below the timeline, e.g. 256kbps [73]% AAC</string>
     <string name="dark_theme">Dark theme</string>
     <string name="dark_theme_on">On</string>
     <string name="dark_theme_off">Off</string>

@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -35,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
@@ -42,8 +42,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
-import com.dd3boh.outertune.constants.PlayerThumbnailCrop
-import com.dd3boh.outertune.constants.PlayerThumbnailCropKey
+import com.dd3boh.outertune.constants.PlayerThumbnailAutoCropKey
 import com.dd3boh.outertune.constants.PlayerThumbnailRoundnessKey
 import com.dd3boh.outertune.constants.PlayerThumbnailSizeKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
@@ -51,7 +50,6 @@ import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.Lyrics
 import com.dd3boh.outertune.ui.utils.expressiveClickable
 import com.dd3boh.outertune.ui.utils.highRes
-import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -63,7 +61,7 @@ fun Thumbnail(
     customMediaMetadata: MediaMetadata? = null,
     size: Float? = null,
     roundness: Int? = null,
-    crop: PlayerThumbnailCrop? = null,
+    autoCrop: Boolean? = null,
 ) {
     val context = LocalContext.current
     val currentView = LocalView.current
@@ -72,11 +70,11 @@ fun Thumbnail(
 
     val prefSize by rememberPreference(PlayerThumbnailSizeKey, defaultValue = 1.0f)
     val prefRoundness by rememberPreference(PlayerThumbnailRoundnessKey, defaultValue = 24)
-    val prefCrop by rememberEnumPreference(PlayerThumbnailCropKey, defaultValue = PlayerThumbnailCrop.ORIGINAL)
+    val prefAutoCrop by rememberPreference(PlayerThumbnailAutoCropKey, defaultValue = false)
 
     val thumbnailSize = size ?: prefSize
     val thumbnailRoundness = roundness ?: prefRoundness
-    val thumbnailCrop = crop ?: prefCrop
+    val thumbnailAutoCrop = autoCrop ?: prefAutoCrop
 
     var showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
@@ -91,11 +89,7 @@ fun Thumbnail(
         }
     }
 
-    val shape = if (thumbnailCrop == PlayerThumbnailCrop.ROUND) {
-        CircleShape
-    } else {
-        RoundedCornerShape(thumbnailRoundness.dp)
-    }
+    val shape = RoundedCornerShape(thumbnailRoundness.dp)
 
     Box(modifier = modifier) {
         AnimatedVisibility(
@@ -123,6 +117,9 @@ fun Thumbnail(
                         // highRes() upgrades the URL to maxresdefault / hq720 for full-screen display
                         model = (mediaMetadata?.thumbnailUrl?.highRes() ?: mediaMetadata?.getThumbnailModel()),
                         contentDescription = null,
+                        // Auto-crop fills the square (cropping non-square artwork);
+                        // otherwise the whole artwork is shown uncropped
+                        contentScale = if (thumbnailAutoCrop) ContentScale.Crop else ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize(thumbnailSize.coerceIn(0.1f, 1.0f))
                             .aspectRatio(1f)
