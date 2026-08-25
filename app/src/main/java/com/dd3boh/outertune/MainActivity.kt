@@ -125,6 +125,7 @@ import com.dd3boh.outertune.constants.EnabledTabsKey
 import com.dd3boh.outertune.constants.HighContrastKey
 import com.dd3boh.outertune.constants.LibraryFilterKey
 import com.dd3boh.outertune.constants.MinMiniPlayerHeight
+import com.dd3boh.outertune.constants.MiniPlayerBottomGap
 import com.dd3boh.outertune.constants.MiniPlayerHeight
 import com.dd3boh.outertune.constants.NavigationBarAnimationSpec
 import com.dd3boh.outertune.constants.NavigationBarHeight
@@ -379,7 +380,7 @@ class MainActivity : ComponentActivity() {
 
                     val playerBottomSheetState = rememberBottomSheetState(
                         dismissedBound = 0.dp,
-                        collapsedBound = bottomInset + MiniPlayerHeight + getNavPadding(),
+                        collapsedBound = bottomInset + MiniPlayerHeight + getNavPadding() + MiniPlayerBottomGap,
                         expandedBound = maxHeight,
                     )
 
