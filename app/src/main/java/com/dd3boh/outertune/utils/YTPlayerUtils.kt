@@ -26,6 +26,8 @@ import com.zionhuang.innertube.models.YouTubeClient.Companion.IOS
 import com.zionhuang.innertube.models.YouTubeClient.Companion.TVHTML5_SIMPLY_EMBEDDED_PLAYER
 import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.zionhuang.innertube.models.response.PlayerResponse
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import okhttp3.OkHttpClient
 
 object YTPlayerUtils {
@@ -94,42 +96,75 @@ object YTPlayerUtils {
 
         /**
          * PoToken minting (BotGuard via WebView) and the signature timestamp fetch are
-         * expensive (seconds on cold start). Neither is used by [MAIN_CLIENT], so both are
-         * resolved lazily, only when a client that actually needs them is being tried.
+         * expensive (seconds on cold start). Neither is used by [MAIN_CLIENT], so the
+         * signature timestamp is fetched in parallel with the main player request and
+         * poToken is minted lazily, only when a client that actually needs it is tried.
          * This keeps the fast path at a single player request.
          */
-        var cachedSignatureTimestamp: Int? = null
-        var signatureTimestampFetched = false
-        suspend fun signatureTimestamp(): Int? {
-            if (!signatureTimestampFetched) {
-                signatureTimestampFetched = true
-                cachedSignatureTimestamp = getSignatureTimestampOrNull(videoId)
-                Log.d(TAG, "[$videoId] signatureTimestamp: $cachedSignatureTimestamp")
-            }
-            return cachedSignatureTimestamp
-        }
+        coroutineScope {
+            val signatureTimestampDeferred =
+                async { getSignatureTimestampOrNull(videoId) }
 
-        var cachedPoToken: Pair<String?, String?>? = null
-        suspend fun poToken(): Pair<String?, String?> {
-            if (cachedPoToken == null) {
-                cachedPoToken = getWebClientPoTokenOrNull(videoId, sessionId)?.let {
-                    Pair(it.playerRequestPoToken, it.streamingDataPoToken)
-                } ?: Pair(null, null).also {
-                    Log.w(TAG, "[$videoId] No po token")
+            var cachedSignatureTimestamp: Int? = null
+            var signatureTimestampFetched = false
+            suspend fun signatureTimestamp(): Int? {
+                if (!signatureTimestampFetched) {
+                    signatureTimestampFetched = true
+                    cachedSignatureTimestamp = signatureTimestampDeferred.await()
+                    Log.d(TAG, "[$videoId] signatureTimestamp: $cachedSignatureTimestamp")
                 }
+                return cachedSignatureTimestamp
             }
-            return cachedPoToken!!
+
+            var cachedPoToken: Pair<String?, String?>? = null
+            suspend fun poToken(): Pair<String?, String?> {
+                if (cachedPoToken == null) {
+                    cachedPoToken = getWebClientPoTokenOrNull(videoId, sessionId)?.let {
+                        Pair(it.playerRequestPoToken, it.streamingDataPoToken)
+                    } ?: Pair(null, null).also {
+                        Log.w(TAG, "[$videoId] No po token")
+                    }
+                }
+                return cachedPoToken!!
+            }
+
+            val mainPlayerResponse =
+                YouTube.player(
+                    videoId,
+                    playlistId,
+                    MAIN_CLIENT,
+                    if (MAIN_CLIENT.useSignatureTimestamp) signatureTimestamp() else null,
+                    if (MAIN_CLIENT.useWebPoTokens) poToken().first else null,
+                ).getOrThrow()
+
+            resolveStreams(
+                videoId = videoId,
+                playlistId = playlistId,
+                audioQuality = audioQuality,
+                connectivityManager = connectivityManager,
+                isLoggedIn = isLoggedIn,
+                mainPlayerResponse = mainPlayerResponse,
+                signatureTimestamp = { signatureTimestamp() },
+                poToken = { poToken() },
+            )
         }
+    }
 
-        val mainPlayerResponse =
-            YouTube.player(
-                videoId,
-                playlistId,
-                MAIN_CLIENT,
-                if (MAIN_CLIENT.useSignatureTimestamp) signatureTimestamp() else null,
-                if (MAIN_CLIENT.useWebPoTokens) poToken().first else null,
-            ).getOrThrow()
-
+    /**
+     * Walks the main client and fallback clients to find a working stream url.
+     * [signatureTimestamp] and [poToken] are lazily-resolved shared helpers owned
+     * by the caller.
+     */
+    private suspend fun resolveStreams(
+        videoId: String,
+        playlistId: String?,
+        audioQuality: AudioQuality,
+        connectivityManager: ConnectivityManager,
+        isLoggedIn: Boolean,
+        mainPlayerResponse: PlayerResponse,
+        signatureTimestamp: suspend () -> Int?,
+        poToken: suspend () -> Pair<String?, String?>,
+    ): PlaybackData {
         val audioConfig = mainPlayerResponse.playerConfig?.audioConfig
         val videoDetails = mainPlayerResponse.videoDetails
         val playbackTracking = mainPlayerResponse.playbackTracking
@@ -251,7 +286,6 @@ object YTPlayerUtils {
             streamExpiresInSeconds,
         )
     }
-
     /**
      * Simple player response intended to use for metadata only.
      * Stream URLs of this response might not work so don't use them.

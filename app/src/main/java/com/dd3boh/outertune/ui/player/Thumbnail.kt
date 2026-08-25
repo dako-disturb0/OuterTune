@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -32,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -41,6 +44,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.dd3boh.outertune.LocalPlayerConnection
+import com.dd3boh.outertune.constants.AuroraThemeKey
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.PlayerThumbnailAutoCropKey
 import com.dd3boh.outertune.constants.PlayerThumbnailRoundnessKey
@@ -71,6 +75,7 @@ fun Thumbnail(
     val prefSize by rememberPreference(PlayerThumbnailSizeKey, defaultValue = 1.0f)
     val prefRoundness by rememberPreference(PlayerThumbnailRoundnessKey, defaultValue = 24)
     val prefAutoCrop by rememberPreference(PlayerThumbnailAutoCropKey, defaultValue = false)
+    val auroraTheme by rememberPreference(AuroraThemeKey, defaultValue = false)
 
     val thumbnailSize = size ?: prefSize
     val thumbnailRoundness = roundness ?: prefRoundness
@@ -113,6 +118,20 @@ fun Thumbnail(
                     modifier = Modifier
                         .weight(1f, false)
                 ) {
+                    // Aurora: soft primary bloom behind the artwork
+                    if (auroraTheme) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(thumbnailSize.coerceIn(0.1f, 1.0f))
+                                .aspectRatio(1f)
+                                .blur(48.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                                    RoundedCornerShape(thumbnailRoundness.dp)
+                                )
+                        )
+                    }
+
                     AsyncImage(
                         // highRes() upgrades the URL to maxresdefault / hq720 for full-screen display
                         model = (mediaMetadata?.thumbnailUrl?.highRes() ?: mediaMetadata?.getThumbnailModel()),
