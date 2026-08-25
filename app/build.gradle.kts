@@ -22,11 +22,11 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.dd3boh.outertune"
+    namespace = "app.dkdstrb.excitedtune"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.dd3boh.outertune"
+        applicationId = "app.dkdstrb.excitedtune"
         minSdk = 25
         targetSdk = 36
         versionCode = 71
@@ -225,6 +225,7 @@ dependencies {
     // ui
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.timber)
     implementation(libs.lazycolumnscrollbar)
     implementation(libs.shimmer)
 

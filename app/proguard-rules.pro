@@ -89,5 +89,5 @@
 -keep class com.kyant.taglib.** { *; }
 
 ## Quality of life for logs
--keepclasseswithmembernames class com.dd3boh.outertune.playback.**
--keepclasseswithmembernames class com.dd3boh.outertune.utils.scanners.**
+-keepclasseswithmembernames class app.dkdstrb.excitedtune.playback.**
+-keepclasseswithmembernames class app.dkdstrb.excitedtune.utils.scanners.**

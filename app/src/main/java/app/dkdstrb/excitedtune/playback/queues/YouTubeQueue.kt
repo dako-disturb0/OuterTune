@@ -1,0 +1,55 @@
+package app.dkdstrb.excitedtune.playback.queues
+
+import app.dkdstrb.excitedtune.models.MediaMetadata
+import app.dkdstrb.excitedtune.models.toMediaMetadata
+import com.metrolist.innertube.YouTube
+import com.metrolist.innertube.models.WatchEndpoint
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.withContext
+
+class YouTubeQueue(
+    private var endpoint: WatchEndpoint,
+    override val preloadItem: MediaMetadata? = null,
+    override val playlistId: String? = endpoint.playlistId,
+    override val startShuffled: Boolean = false,
+    private var continuation: String? = null,
+) : Queue {
+
+    override suspend fun getInitialStatus(): Queue.Status {
+        val nextResult = withContext(IO) {
+            YouTube.next(endpoint, continuation).getOrThrow()
+        }
+        endpoint = nextResult.endpoint
+        continuation = nextResult.continuation
+        return Queue.Status(
+            title = nextResult.title,
+            items = nextResult.items.map { it.toMediaMetadata() },
+            mediaItemIndex = nextResult.currentIndex ?: 0
+        )
+    }
+
+    override fun hasNextPage(): Boolean = continuation != null
+
+    override suspend fun nextPage(): List<MediaMetadata> {
+        val nextResult = withContext(IO) {
+            YouTube.next(endpoint, continuation).getOrNull()
+        }
+        if (nextResult != null) {
+            endpoint = nextResult.endpoint
+        }
+        continuation = nextResult?.continuation
+        return nextResult?.items?.map { it.toMediaMetadata() } ?: emptyList()
+    }
+
+//    fun getContinuationEndpoint(): String? {
+//        return if (endpoint.videoId != null && continuation != null) {
+//            "${endpoint.videoId}\n$continuation"
+//        } else {
+//            null
+//        }
+//    }
+
+    companion object {
+        fun radio(song: MediaMetadata) = YouTubeQueue(WatchEndpoint(song.id), song)
+    }
+}
